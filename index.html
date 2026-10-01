@@ -191,12 +191,31 @@ input[type="color"] {
     border-radius: 8px;
     overflow: hidden;
     background: #ddd;
+    cursor: grab;
+    border: 3px solid transparent;
+    transition: transform 0.15s, opacity 0.15s, border-color 0.15s;
 }
 
 .thumbnail img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.thumbnail:active {
+    cursor: grabbing;
+}
+
+.thumbnail.dragging {
+    opacity: 0.4;
+}
+
+.thumbnail.drag-over {
+    border-color: #2563eb;
+    transform: scale(1.04);
 }
 
 .remove-image {
@@ -830,16 +849,23 @@ function renderThumbnails() {
 
     images.forEach((item, index) => {
 
-        const div = document.createElement("div");
+        const div =
+            document.createElement("div");
 
-        div.className = "thumbnail";
+        div.className =
+            "thumbnail";
 
         div.draggable = true;
 
-        div.dataset.index = index;
+        div.dataset.index =
+            index;
 
         div.innerHTML = `
-            <img src="${item.image.src}">
+            <img
+                src="${item.image.src}"
+                draggable="false"
+            >
+
             <button
                 class="remove-image"
                 data-index="${index}">
@@ -851,7 +877,12 @@ function renderThumbnails() {
     });
 
 
-    // Remove image buttons
+    /*
+     * =========================
+     * REMOVE IMAGE
+     * =========================
+     */
+
     document
         .querySelectorAll(".remove-image")
         .forEach(button => {
@@ -863,54 +894,128 @@ function renderThumbnails() {
                     event.stopPropagation();
 
                     const index =
-                        Number(this.dataset.index);
+                        Number(
+                            this.dataset.index
+                        );
 
-                    images.splice(index, 1);
+                    images.splice(
+                        index,
+                        1
+                    );
 
                     renderThumbnails();
+
                     renderCanvas();
+
                 }
             );
 
         });
 
 
-    // Drag and drop reordering
+    /*
+     * =========================
+     * DRAG & DROP
+     * =========================
+     */
+
     document
         .querySelectorAll(".thumbnail")
         .forEach(thumbnail => {
 
+
+            /*
+             * START DRAG
+             */
+
             thumbnail.addEventListener(
                 "dragstart",
                 function(event) {
+
+                    this.classList.add(
+                        "dragging"
+                    );
+
+                    event.dataTransfer.effectAllowed =
+                        "move";
 
                     event.dataTransfer.setData(
                         "text/plain",
                         this.dataset.index
                     );
 
-                    this.style.opacity = "0.5";
                 }
             );
 
+
+            /*
+             * END DRAG
+             */
 
             thumbnail.addEventListener(
                 "dragend",
                 function() {
 
-                    this.style.opacity = "1";
+                    this.classList.remove(
+                        "dragging"
+                    );
+
+                    document
+                        .querySelectorAll(
+                            ".thumbnail"
+                        )
+                        .forEach(item => {
+
+                            item.classList.remove(
+                                "drag-over"
+                            );
+
+                        });
+
                 }
             );
 
+
+            /*
+             * DRAG OVER
+             */
 
             thumbnail.addEventListener(
                 "dragover",
                 function(event) {
 
                     event.preventDefault();
+
+                    event.dataTransfer.dropEffect =
+                        "move";
+
+                    this.classList.add(
+                        "drag-over"
+                    );
+
                 }
             );
 
+
+            /*
+             * DRAG LEAVE
+             */
+
+            thumbnail.addEventListener(
+                "dragleave",
+                function() {
+
+                    this.classList.remove(
+                        "drag-over"
+                    );
+
+                }
+            );
+
+
+            /*
+             * DROP
+             */
 
             thumbnail.addEventListener(
                 "drop",
@@ -918,22 +1023,47 @@ function renderThumbnails() {
 
                     event.preventDefault();
 
+                    this.classList.remove(
+                        "drag-over"
+                    );
+
+
                     const fromIndex =
                         Number(
                             event.dataTransfer
-                                .getData("text/plain")
+                                .getData(
+                                    "text/plain"
+                                )
                         );
 
+
                     const toIndex =
-                        Number(this.dataset.index);
+                        Number(
+                            this.dataset.index
+                        );
 
 
-                    if (fromIndex === toIndex) {
+                    if (
+                        Number.isNaN(
+                            fromIndex
+                        )
+                    ) {
                         return;
                     }
 
 
-                    // Move the image
+                    if (
+                        fromIndex ===
+                        toIndex
+                    ) {
+                        return;
+                    }
+
+
+                    /*
+                     * Move image
+                     */
+
                     const movedImage =
                         images.splice(
                             fromIndex,
@@ -948,13 +1078,22 @@ function renderThumbnails() {
                     );
 
 
+                    /*
+                     * Rebuild thumbnails
+                     * and update collage
+                     */
+
                     renderThumbnails();
+
                     renderCanvas();
+
                 }
             );
 
         });
+
 }
+
 
 /* CLEAR */
 
