@@ -1104,74 +1104,37 @@ function drawImageCover(
     width,
     height
 ) {
-
     const imageRatio =
-        image.width /
-        image.height;
-
+        image.width / image.height;
 
     const boxRatio =
-        width /
-        height;
+        width / height;
 
-
-    let sourceWidth;
-    let sourceHeight;
-    let sourceX;
-    let sourceY;
-
+    let drawWidth;
+    let drawHeight;
 
     if (imageRatio > boxRatio) {
-
-        sourceHeight =
-            image.height;
-
-        sourceWidth =
-            image.height *
-            boxRatio;
-
-        sourceX =
-            (
-                image.width -
-                sourceWidth
-            ) / 2;
-
-        sourceY = 0;
-
+        drawWidth = width;
+        drawHeight = width / imageRatio;
     } else {
-
-        sourceWidth =
-            image.width;
-
-        sourceHeight =
-            image.width /
-            boxRatio;
-
-        sourceX = 0;
-
-        sourceY =
-            (
-                image.height -
-                sourceHeight
-            ) / 2;
-
+        drawHeight = height;
+        drawWidth = height * imageRatio;
     }
 
+    const drawX =
+        x + (width - drawWidth) / 2;
+
+    const drawY =
+        y + (height - drawHeight) / 2;
 
     ctx.drawImage(
         image,
-        sourceX,
-        sourceY,
-        sourceWidth,
-        sourceHeight,
-        x,
-        y,
-        width,
-        height
+        drawX,
+        drawY,
+        drawWidth,
+        drawHeight
     );
-
 }
-
 
 /* SETTINGS */
 
