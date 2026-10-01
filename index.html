@@ -42,6 +42,8 @@ input[type=color]{width:100%;height:42px;border:1px solid #ccd1d8;border-radius:
 .page-break-marker{grid-column:1/-1;background:#eff6ff;border:2px dashed #2563eb;color:#1d4ed8;border-radius:10px;padding:12px;text-align:center;font-weight:bold}
 .page-break-marker button{margin-left:10px;padding:6px 10px;background:#dc2626;color:#fff;font-size:12px}
 .break-here{width:100%;margin-bottom:7px;padding:6px;background:#ede9fe;color:#6d28d9;font-size:12px}
+.page-nav{display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:12px;font-weight:bold}
+button:disabled{opacity:.4;cursor:default}
 .buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px}
 .primary{background:#2563eb;color:#fff}
@@ -112,8 +114,13 @@ button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weigh
 
     <div class="panel">
       <h2>3. Preview</h2>
+      <div class="page-nav">
+        <button class="secondary" id="prevPage">◀ Prev</button>
+        <span id="pageIndicator">Page 1</span>
+        <button class="secondary" id="nextPage">Next ▶</button>
+      </div>
       <div class="preview-container"><canvas id="canvas"></canvas></div>
-      <div class="info">The preview shows the first page. The PDF will contain all pages.</div>
+      <div class="info">Use Prev / Next to browse the pages. The PDF will contain all pages.</div>
       <div class="buttons"><button class="primary" id="downloadButton">📄 Download PDF</button></div>
     </div>
   </div>
@@ -160,6 +167,7 @@ const canvas = $("canvas"), ctx = canvas.getContext("2d");
 const imageList = $("imageList");
 let images = [];      // { image, name, details }
 let pageBreaks = [];  // image indexes that start a manual new page
+let previewPage = 0;  // index of the page shown in the preview
 
 const num = (v, d) => Number(v) || d;
 
@@ -437,8 +445,17 @@ function drawPage(idx, pageNo) {
 
 function renderCanvas() {
   const groups = getPageGroups();
-  drawPage(groups[0] || [], getSettings().startPage);
+  const total = Math.max(1, groups.length);
+  previewPage = Math.min(Math.max(0, previewPage), total - 1);
+  const label = getSettings().startPage + previewPage;
+  drawPage(groups[previewPage] || [], label);
+  $("pageIndicator").textContent = `Page ${label} (${previewPage + 1} of ${total})`;
+  $("prevPage").disabled = previewPage === 0;
+  $("nextPage").disabled = previewPage >= total - 1;
 }
+
+$("prevPage").addEventListener("click", () => { previewPage--; renderCanvas(); });
+$("nextPage").addEventListener("click", () => { previewPage++; renderCanvas(); });
 
 /* ===== PDF ===== */
 function hexToRgb(hex) {
