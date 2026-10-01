@@ -293,6 +293,41 @@ input[type="color"] {
 
 
 /* =========================
+   PAGE BREAK BUTTON
+========================= */
+
+.page-break-button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px dashed #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 7px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.page-break-button:hover {
+    background: #dbeafe;
+}
+
+.page-break-button.active {
+    background: #2563eb;
+    color: white;
+    border-style: solid;
+}
+
+.page-break-label {
+    margin-top: 8px;
+    text-align: center;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+/* =========================
    BUTTONS
 ========================= */
 
@@ -336,10 +371,20 @@ button {
     background: #d1d5db;
     padding: 25px;
     border-radius: 10px;
+}
+
+.preview-page {
+    margin: 0 auto 25px auto;
     text-align: center;
 }
 
-#canvas {
+.preview-page-label {
+    color: #374151;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.preview-page canvas {
     display: block;
     margin: auto;
     max-width: 100%;
@@ -556,6 +601,59 @@ button {
         <div>
 
             <label>
+                Images Per Page
+            </label>
+
+            <select id="imagesPerPage">
+
+                <option value="1">
+                    1
+                </option>
+
+                <option value="2">
+                    2
+                </option>
+
+                <option value="4">
+                    4
+                </option>
+
+                <option value="6" selected>
+                    6
+                </option>
+
+                <option value="8">
+                    8
+                </option>
+
+                <option value="9">
+                    9
+                </option>
+
+                <option value="12">
+                    12
+                </option>
+
+                <option value="16">
+                    16
+                </option>
+
+                <option value="20">
+                    20
+                </option>
+
+                <option value="24">
+                    24
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div>
+
+            <label>
                 Image Spacing
             </label>
 
@@ -723,10 +821,10 @@ button {
 
     <h2>3. Preview</h2>
 
-    <div class="preview-container">
-
-        <canvas id="canvas"></canvas>
-
+    <div
+        class="preview-container"
+        id="previewContainer"
+    >
     </div>
 
 
@@ -995,6 +1093,11 @@ const columns =
         "columns"
     );
 
+const imagesPerPage =
+    document.getElementById(
+        "imagesPerPage"
+    );
+
 const spacing =
     document.getElementById(
         "spacing"
@@ -1025,18 +1128,33 @@ const startingImageNumber =
         "startingImageNumber"
     );
 
-const canvas =
+const previewContainer =
     document.getElementById(
-        "canvas"
-    );
-
-const ctx =
-    canvas.getContext(
-        "2d"
+        "previewContainer"
     );
 
 
 let images = [];
+
+
+/*
+ * Each value is the image index
+ * AFTER WHICH a new page starts.
+ *
+ * Example:
+ *
+ * [2]
+ *
+ * means:
+ *
+ * Page 1 = images 1,2,3
+ * Page 2 = images 4...
+ *
+ * Internally we store zero-based
+ * image indexes.
+ */
+
+let manualPageBreaks = new Set();
 
 
 
@@ -1178,6 +1296,93 @@ function addFiles(files) {
 
 
 /* =========================
+   PAGE CALCULATION
+========================= */
+
+/*
+ * Converts the image list into
+ * actual pages.
+ *
+ * Automatic rule:
+ *
+ * imagesPerPage = maximum number
+ * of images allowed on one page.
+ *
+ * Manual page breaks:
+ *
+ * If a break exists after an image,
+ * the next image starts a new page.
+ */
+
+function getPages() {
+
+    const pages = [];
+
+    let currentPage = [];
+
+    const maxPerPage =
+        Math.max(
+            1,
+            Number(
+                imagesPerPage.value
+            ) || 1
+        );
+
+
+    images.forEach(
+        (item, index) => {
+
+            currentPage.push(
+                index
+            );
+
+
+            const reachedLimit =
+                currentPage.length >=
+                maxPerPage;
+
+
+            const hasManualBreak =
+                manualPageBreaks.has(
+                    index
+                );
+
+
+            if (
+                reachedLimit ||
+                hasManualBreak
+            ) {
+
+                pages.push(
+                    currentPage
+                );
+
+                currentPage = [];
+
+            }
+
+        }
+    );
+
+
+    if (
+        currentPage.length > 0
+    ) {
+
+        pages.push(
+            currentPage
+        );
+
+    }
+
+
+    return pages;
+
+}
+
+
+
+/* =========================
    THUMBNAILS
 ========================= */
 
@@ -1218,6 +1423,12 @@ function renderThumbnails() {
                 index;
 
 
+            const hasBreak =
+                manualPageBreaks.has(
+                    index
+                );
+
+
             div.innerHTML = `
 
                 <div class="thumbnail">
@@ -1248,6 +1459,26 @@ function renderThumbnails() {
                     data-index="${index}"
                     placeholder="Enter details for image ${imageNumber}..."
                 >${escapeHtml(item.details)}</textarea>
+
+
+                <button
+                    class="page-break-button ${hasBreak ? "active" : ""}"
+                    data-index="${index}"
+                    type="button"
+                >
+                    ${hasBreak
+                        ? "↩ Remove Page Break"
+                        : "＋ Add New Page After"}
+                </button>
+
+
+                ${
+                    hasBreak
+                        ? `<div class="page-break-label">
+                                Next image starts a new page
+                           </div>`
+                        : ""
+                }
 
             `;
 
@@ -1288,6 +1519,55 @@ function renderThumbnails() {
                             index,
                             1
                         );
+
+
+                        /*
+                         * Rebuild manual breaks
+                         * after deleting an image.
+                         */
+
+                        const newBreaks =
+                            new Set();
+
+
+                        manualPageBreaks.forEach(
+                            breakIndex => {
+
+                                if (
+                                    breakIndex ===
+                                    index
+                                ) {
+
+                                    return;
+
+                                }
+
+
+                                if (
+                                    breakIndex >
+                                    index
+                                ) {
+
+                                    newBreaks.add(
+                                        breakIndex - 1
+                                    );
+
+                                }
+
+                                else {
+
+                                    newBreaks.add(
+                                        breakIndex
+                                    );
+
+                                }
+
+                            }
+                        );
+
+
+                        manualPageBreaks =
+                            newBreaks;
 
 
                         renderThumbnails();
@@ -1346,6 +1626,64 @@ function renderThumbnails() {
                     event => {
 
                         event.stopPropagation();
+
+                    }
+                );
+
+            }
+        );
+
+
+    /* =========================
+       PAGE BREAK
+    ========================= */
+
+    document
+        .querySelectorAll(
+            ".page-break-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    function(event) {
+
+                        event.preventDefault();
+
+                        event.stopPropagation();
+
+
+                        const index =
+                            Number(
+                                this.dataset.index
+                            );
+
+
+                        if (
+                            manualPageBreaks.has(
+                                index
+                            )
+                        ) {
+
+                            manualPageBreaks.delete(
+                                index
+                            );
+
+                        }
+
+                        else {
+
+                            manualPageBreaks.add(
+                                index
+                            );
+
+                        }
+
+
+                        renderThumbnails();
+
+                        renderCanvas();
 
                     }
                 );
@@ -1506,6 +1844,67 @@ function renderThumbnails() {
                         );
 
 
+                        /*
+                         * Recalculate manual page
+                         * breaks based on the new
+                         * image order.
+                         */
+
+                        const oldBreaks =
+                            [...manualPageBreaks]
+                                .sort(
+                                    (a, b) =>
+                                        a - b
+                                );
+
+
+                        manualPageBreaks =
+                            new Set();
+
+
+                        oldBreaks.forEach(
+                            breakIndex => {
+
+                                let newIndex =
+                                    breakIndex;
+
+
+                                if (
+                                    fromIndex <
+                                    breakIndex
+                                ) {
+
+                                    newIndex--;
+
+                                }
+
+
+                                if (
+                                    toIndex <=
+                                    breakIndex
+                                ) {
+
+                                    newIndex++;
+
+                                }
+
+
+                                if (
+                                    newIndex >= 0 &&
+                                    newIndex <
+                                    images.length
+                                ) {
+
+                                    manualPageBreaks.add(
+                                        newIndex
+                                    );
+
+                                }
+
+                            }
+                        );
+
+
                         renderThumbnails();
 
                         renderCanvas();
@@ -1562,6 +1961,9 @@ clearButton.addEventListener(
 
         images = [];
 
+        manualPageBreaks =
+            new Set();
+
         renderThumbnails();
 
         renderCanvas();
@@ -1580,6 +1982,7 @@ clearButton.addEventListener(
     pageSize,
     orientation,
     columns,
+    imagesPerPage,
     spacing,
     margin,
     headerSize,
@@ -1641,6 +2044,14 @@ function getSettings() {
                 columns.value
             ),
 
+        imagesPerPage:
+            Math.max(
+                1,
+                Number(
+                    imagesPerPage.value
+                ) || 1
+            ),
+
         spacing:
             Number(
                 spacing.value
@@ -1692,15 +2103,15 @@ function getPageDimensions(
         "a4"
     ) {
 
-        width = 2480;
-        height = 3508;
+        width = 1240;
+        height = 1754;
 
     }
 
     else {
 
-        width = 2550;
-        height = 3300;
+        width = 1275;
+        height = 1650;
 
     }
 
@@ -1892,14 +2303,14 @@ function wrapText(
 
 
 /* =========================
-   CANVAS PREVIEW
+   DRAW ONE CANVAS PAGE
 ========================= */
 
-function renderCanvas() {
-
-    const settings =
-        getSettings();
-
+function drawPage(
+    pageIndexes,
+    pageNumber,
+    settings
+) {
 
     const page =
         getPageDimensions(
@@ -1907,46 +2318,60 @@ function renderCanvas() {
         );
 
 
-    canvas.width =
+    const pageCanvas =
+        document.createElement(
+            "canvas"
+        );
+
+
+    pageCanvas.width =
         page.width;
 
-    canvas.height =
+    pageCanvas.height =
         page.height;
 
 
-    ctx.fillStyle =
+    const context =
+        pageCanvas.getContext(
+            "2d"
+        );
+
+
+    /* BACKGROUND */
+
+    context.fillStyle =
         settings.background;
 
 
-    ctx.fillRect(
+    context.fillRect(
         0,
         0,
-        canvas.width,
-        canvas.height
+        pageCanvas.width,
+        pageCanvas.height
     );
 
 
     /* HEADER */
 
-    ctx.fillStyle =
+    context.fillStyle =
         "#111827";
 
 
-    ctx.font =
+    context.font =
         `bold ${settings.headerSize}px Arial`;
 
 
-    ctx.textAlign =
+    context.textAlign =
         "center";
 
 
-    ctx.textBaseline =
+    context.textBaseline =
         "middle";
 
 
-    ctx.fillText(
+    context.fillText(
         settings.header,
-        canvas.width / 2,
+        pageCanvas.width / 2,
         settings.margin +
         settings.headerSize
     );
@@ -1954,54 +2379,42 @@ function renderCanvas() {
 
     /* PAGE NUMBER */
 
-    ctx.font =
+    context.font =
         "22px Arial";
 
 
-    ctx.fillStyle =
+    context.fillStyle =
         "#6b7280";
 
 
-    ctx.fillText(
+    context.fillText(
         "Page " +
-        settings.startingPageNumber,
-        canvas.width / 2,
-        canvas.height -
+        pageNumber,
+        pageCanvas.width / 2,
+        pageCanvas.height -
         settings.margin / 2
     );
 
 
     if (
-        images.length === 0
+        pageIndexes.length === 0
     ) {
 
-        ctx.fillStyle =
-            "#9ca3af";
-
-
-        ctx.font =
-            "30px Arial";
-
-
-        ctx.fillText(
-            "Add images to create your collage",
-            canvas.width / 2,
-            canvas.height / 2
-        );
-
-
-        return;
+        return pageCanvas;
 
     }
 
 
     const cols =
-        settings.columns;
+        Math.min(
+            settings.columns,
+            pageIndexes.length
+        );
 
 
     const rows =
         Math.ceil(
-            images.length /
+            pageIndexes.length /
             cols
         );
 
@@ -2018,13 +2431,13 @@ function renderCanvas() {
 
 
     const availableWidth =
-        canvas.width -
+        pageCanvas.width -
         settings.margin *
         2;
 
 
     const availableHeight =
-        canvas.height -
+        pageCanvas.height -
         topSpace -
         bottomSpace;
 
@@ -2045,18 +2458,27 @@ function renderCanvas() {
         ) / rows;
 
 
-    images.forEach(
-        (item, index) => {
+    pageIndexes.forEach(
+        (
+            imageIndex,
+            localIndex
+        ) => {
+
+            const item =
+                images[
+                    imageIndex
+                ];
+
 
             const row =
                 Math.floor(
-                    index /
+                    localIndex /
                     cols
                 );
 
 
             const col =
-                index %
+                localIndex %
                 cols;
 
 
@@ -2080,13 +2502,8 @@ function renderCanvas() {
 
             const imageNumber =
                 settings.startingImageNumber +
-                index;
+                imageIndex;
 
-
-            /*
-             * Reserve bottom part
-             * of cell for details.
-             */
 
             const detailsHeight =
                 Math.min(
@@ -2097,13 +2514,16 @@ function renderCanvas() {
 
 
             const imageHeight =
-                cellHeight -
-                detailsHeight -
-                15;
+                Math.max(
+                    30,
+                    cellHeight -
+                    detailsHeight -
+                    15
+                );
 
 
             drawImageContain(
-                ctx,
+                context,
                 item.image,
                 x,
                 y,
@@ -2112,27 +2532,25 @@ function renderCanvas() {
             );
 
 
-            /*
-             * IMAGE NUMBER
-             */
+            /* IMAGE NUMBER */
 
-            ctx.textAlign =
+            context.textAlign =
                 "left";
 
 
-            ctx.textBaseline =
+            context.textBaseline =
                 "top";
 
 
-            ctx.fillStyle =
+            context.fillStyle =
                 "#111827";
 
 
-            ctx.font =
+            context.font =
                 "bold 24px Arial";
 
 
-            ctx.fillText(
+            context.fillText(
                 imageNumber +
                 ".",
                 x,
@@ -2142,16 +2560,14 @@ function renderCanvas() {
             );
 
 
-            /*
-             * DETAILS
-             */
+            /* DETAILS */
 
             if (
                 item.details &&
                 item.details.trim()
             ) {
 
-                ctx.font =
+                context.font =
                     "20px Arial";
 
 
@@ -2160,12 +2576,15 @@ function renderCanvas() {
 
 
                 const detailsWidth =
-                    cellWidth - 35;
+                    Math.max(
+                        20,
+                        cellWidth - 35
+                    );
 
 
                 const lines =
                     wrapText(
-                        ctx,
+                        context,
                         item.details.trim(),
                         detailsWidth
                     );
@@ -2182,7 +2601,7 @@ function renderCanvas() {
                             lineIndex
                         ) => {
 
-                            ctx.fillText(
+                            context.fillText(
                                 line,
                                 detailsX,
                                 y +
@@ -2196,6 +2615,123 @@ function renderCanvas() {
                     );
 
             }
+
+        }
+    );
+
+
+    return pageCanvas;
+
+}
+
+
+
+/* =========================
+   CANVAS PREVIEW
+========================= */
+
+function renderCanvas() {
+
+    previewContainer.innerHTML = "";
+
+
+    const settings =
+        getSettings();
+
+
+    const pages =
+        getPages();
+
+
+    if (
+        pages.length === 0
+    ) {
+
+        const emptyPage =
+            drawPage(
+                [],
+                settings.startingPageNumber,
+                settings
+            );
+
+
+        const wrapper =
+            document.createElement(
+                "div"
+            );
+
+
+        wrapper.className =
+            "preview-page";
+
+
+        wrapper.innerHTML = `
+            <div class="preview-page-label">
+                Page ${settings.startingPageNumber}
+            </div>
+        `;
+
+
+        wrapper.appendChild(
+            emptyPage
+        );
+
+
+        previewContainer.appendChild(
+            wrapper
+        );
+
+
+        return;
+
+    }
+
+
+    pages.forEach(
+        (
+            pageIndexes,
+            pageIndex
+        ) => {
+
+            const pageNumber =
+                settings.startingPageNumber +
+                pageIndex;
+
+
+            const pageCanvas =
+                drawPage(
+                    pageIndexes,
+                    pageNumber,
+                    settings
+                );
+
+
+            const wrapper =
+                document.createElement(
+                    "div"
+                );
+
+
+            wrapper.className =
+                "preview-page";
+
+
+            wrapper.innerHTML = `
+                <div class="preview-page-label">
+                    Page ${pageNumber}
+                    — ${pageIndexes.length} image${pageIndexes.length === 1 ? "" : "s"}
+                </div>
+            `;
+
+
+            wrapper.appendChild(
+                pageCanvas
+            );
+
+
+            previewContainer.appendChild(
+                wrapper
+            );
 
         }
     );
@@ -2229,9 +2765,18 @@ downloadButton.addEventListener(
             getSettings();
 
 
-        /*
-         * PDF dimensions in mm
-         */
+        const pages =
+            getPages();
+
+
+        if (
+            pages.length === 0
+        ) {
+
+            return;
+
+        }
+
 
         let pdfWidth;
         let pdfHeight;
@@ -2289,489 +2834,65 @@ downloadButton.addEventListener(
             });
 
 
-        /*
-         * PDF layout
-         */
+        pages.forEach(
+            (
+                pageIndexes,
+                pageIndex
+            ) => {
 
-        const marginMM =
-            Math.max(
-                5,
-                settings.margin /
-                10
-            );
+                if (
+                    pageIndex > 0
+                ) {
 
+                    pdf.addPage(
+                        settings.pageSize ===
+                        "a4"
+                            ? "a4"
+                            : "letter",
 
-        const spacingMM =
-            Math.max(
-                0,
-                settings.spacing /
-                10
-            );
+                        settings.orientation
+                    );
 
-
-        const headerSizeMM =
-            Math.max(
-                5,
-                settings.headerSize /
-                8
-            );
+                }
 
 
-        const headerY =
-            marginMM +
-            headerSizeMM;
+                /*
+                 * Render the exact same
+                 * page used by preview.
+                 */
+
+                const pageCanvas =
+                    drawPage(
+                        pageIndexes,
+                        settings.startingPageNumber +
+                        pageIndex,
+                        settings
+                    );
 
 
-        const topSpace =
-            marginMM +
-            headerSizeMM *
-            2;
+                const imageData =
+                    pageCanvas.toDataURL(
+                        "image/jpeg",
+                        0.92
+                    );
 
 
-        const bottomSpace =
-            marginMM *
-            1.8;
-
-
-        const availableWidth =
-            pdfWidth -
-            marginMM *
-            2;
-
-
-        const availableHeight =
-            pdfHeight -
-            topSpace -
-            bottomSpace;
-
-
-        const cols =
-            settings.columns;
-
-
-        /*
-         * Estimate row height.
-         *
-         * We use a fixed number of
-         * rows per page so that
-         * additional images create
-         * additional PDF pages.
-         */
-
-        const rowHeight =
-            75;
-
-
-        const rowsPerPage =
-            Math.max(
-                1,
-                Math.floor(
-                    (
-                        availableHeight +
-                        spacingMM
-                    ) /
-                    (
-                        rowHeight +
-                        spacingMM
-                    )
-                )
-            );
-
-
-        const imagesPerPage =
-            cols *
-            rowsPerPage;
-
-
-        /*
-         * Create pages.
-         */
-
-        let pageNumber =
-            settings.startingPageNumber;
-
-
-        for (
-            let start = 0;
-            start < images.length;
-            start += imagesPerPage
-        ) {
-
-
-            if (
-                start > 0
-            ) {
-
-                pdf.addPage(
-                    settings.pageSize ===
-                    "a4"
-                        ? "a4"
-                        : "letter",
-
-                    settings.orientation
+                pdf.addImage(
+                    imageData,
+                    "JPEG",
+                    0,
+                    0,
+                    pdfWidth,
+                    pdfHeight
                 );
 
             }
+        );
 
 
-            /*
-             * Background
-             */
-
-            const rgb =
-                hexToRgb(
-                    settings.background
-                );
-
-
-            pdf.setFillColor(
-                rgb.r,
-                rgb.g,
-                rgb.b
-            );
-
-
-            pdf.rect(
-                0,
-                0,
-                pdfWidth,
-                pdfHeight,
-                "F"
-            );
-
-
-            /*
-             * Header
-             */
-
-            pdf.setTextColor(
-                17,
-                24,
-                39
-            );
-
-
-            pdf.setFont(
-                "helvetica",
-                "bold"
-            );
-
-
-            pdf.setFontSize(
-                headerSizeMM
-            );
-
-
-            pdf.text(
-                settings.header,
-                pdfWidth / 2,
-                headerY,
-                {
-                    align: "center"
-                }
-            );
-
-
-            /*
-             * Images
-             */
-
-            const pageImages =
-                images.slice(
-                    start,
-                    start +
-                    imagesPerPage
-                );
-
-
-            pageImages.forEach(
-                (
-                    item,
-                    localIndex
-                ) => {
-
-                    const globalIndex =
-                        start +
-                        localIndex;
-
-
-                    const row =
-                        Math.floor(
-                            localIndex /
-                            cols
-                        );
-
-
-                    const col =
-                        localIndex %
-                        cols;
-
-
-                    const x =
-                        marginMM +
-                        col *
-                        (
-                            (
-                                availableWidth -
-                                spacingMM *
-                                (cols - 1)
-                            ) /
-                            cols +
-                            spacingMM
-                        );
-
-
-                    const cellWidth =
-                        (
-                            availableWidth -
-                            spacingMM *
-                            (cols - 1)
-                        ) /
-                        cols;
-
-
-                    const y =
-                        topSpace +
-                        row *
-                        (
-                            rowHeight +
-                            spacingMM
-                        );
-
-
-                    /*
-                     * Image number
-                     */
-
-                    const imageNumber =
-                        settings.startingImageNumber +
-                        globalIndex;
-
-
-                    /*
-                     * Image area
-                     */
-
-                    const imageAreaHeight =
-                        rowHeight -
-                        20;
-
-
-                    /*
-                     * Convert image dimensions
-                     * to fit the cell.
-                     */
-
-                    const ratio =
-                        item.image.width /
-                        item.image.height;
-
-
-                    let drawWidth =
-                        cellWidth;
-
-
-                    let drawHeight =
-                        drawWidth /
-                        ratio;
-
-
-                    if (
-                        drawHeight >
-                        imageAreaHeight
-                    ) {
-
-                        drawHeight =
-                            imageAreaHeight;
-
-                        drawWidth =
-                            drawHeight *
-                            ratio;
-
-                    }
-
-
-                    const imageX =
-                        x +
-                        (
-                            cellWidth -
-                            drawWidth
-                        ) /
-                        2;
-
-
-                    const imageY =
-                        y +
-                        (
-                            imageAreaHeight -
-                            drawHeight
-                        ) /
-                        2;
-
-
-                    const tempCanvas =
-                        document.createElement(
-                            "canvas"
-                        );
-
-
-                    tempCanvas.width =
-                        item.image.width;
-
-
-                    tempCanvas.height =
-                        item.image.height;
-
-
-                    const tempCtx =
-                        tempCanvas.getContext(
-                            "2d"
-                        );
-
-
-                    tempCtx.drawImage(
-                        item.image,
-                        0,
-                        0
-                    );
-
-
-                    const imageData =
-                        tempCanvas.toDataURL(
-                            "image/jpeg",
-                            0.92
-                        );
-
-
-                    pdf.addImage(
-                        imageData,
-                        "JPEG",
-                        imageX,
-                        imageY,
-                        drawWidth,
-                        drawHeight
-                    );
-
-
-                    /*
-                     * Number
-                     */
-
-                    pdf.setFont(
-                        "helvetica",
-                        "bold"
-                    );
-
-
-                    pdf.setFontSize(
-                        10
-                    );
-
-
-                    pdf.setTextColor(
-                        17,
-                        24,
-                        39
-                    );
-
-
-                    pdf.text(
-                        imageNumber +
-                        ".",
-                        x,
-                        y +
-                        imageAreaHeight +
-                        6
-                    );
-
-
-                    /*
-                     * Details
-                     */
-
-                    if (
-                        item.details &&
-                        item.details.trim()
-                    ) {
-
-                        pdf.setFont(
-                            "helvetica",
-                            "normal"
-                        );
-
-
-                        pdf.setFontSize(
-                            8
-                        );
-
-
-                        const detailLines =
-                            pdf.splitTextToSize(
-                                item.details.trim(),
-                                cellWidth -
-                                8
-                            );
-
-
-                        pdf.text(
-                            detailLines.slice(
-                                0,
-                                3
-                            ),
-                            x + 7,
-                            y +
-                            imageAreaHeight +
-                            6
-                        );
-
-                    }
-
-                }
-            );
-
-
-            /*
-             * PAGE NUMBER
-             */
-
-            pdf.setFont(
-                "helvetica",
-                "normal"
-            );
-
-
-            pdf.setFontSize(
-                8
-            );
-
-
-            pdf.setTextColor(
-                107,
-                114,
-                128
-            );
-
-
-            pdf.text(
-                "Page " +
-                pageNumber,
-                pdfWidth / 2,
-                pdfHeight -
-                marginMM / 2,
-                {
-                    align: "center"
-                }
-            );
-
-
-            pageNumber++;
-
-        }
-
-
-        /*
-         * Filename
-         */
+        /* =========================
+           FILENAME
+        ========================= */
 
         let filename =
             settings.header
@@ -2805,56 +2926,10 @@ downloadButton.addEventListener(
 
 
 /* =========================
-   HEX TO RGB
-========================= */
-
-function hexToRgb(hex) {
-
-    const clean =
-        hex.replace(
-            "#",
-            ""
-        );
-
-
-    return {
-
-        r:
-            parseInt(
-                clean.substring(
-                    0,
-                    2
-                ),
-                16
-            ),
-
-        g:
-            parseInt(
-                clean.substring(
-                    2,
-                    4
-                ),
-                16
-            ),
-
-        b:
-            parseInt(
-                clean.substring(
-                    4,
-                    6
-                ),
-                16
-            )
-
-    };
-
-}
-
-
-
-/* =========================
    INITIAL
 ========================= */
+
+renderThumbnails();
 
 renderCanvas();
 
