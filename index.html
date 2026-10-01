@@ -1,250 +1,2865 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Private Collage Maker</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #eef1f5;
+    color: #222;
+}
+
+
+/* =========================
+   LOGIN
+========================= */
+
+#loginPage {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.login-box {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    padding: 35px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+}
+
+.login-box h1 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.login-box p {
+    text-align: center;
+    color: #6b7280;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 13px;
+    margin: 8px 0;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.login-button {
+    width: 100%;
+    padding: 13px;
+    margin-top: 10px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.login-button:hover {
+    background: #1d4ed8;
+}
+
+#errorMessage {
+    color: #dc2626;
+    text-align: center;
+    margin-top: 12px;
+    display: none;
+}
+
+
+/* =========================
+   APP
+========================= */
+
+#appPage {
+    display: none;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 18px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.logout {
+    background: #374151;
+    color: white;
+    border: none;
+    padding: 9px 15px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.app {
+    max-width: 1200px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+
+.panel {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(180px, 1fr)
+    );
+    gap: 15px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 7px;
+    font-size: 14px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccd1d8;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+input[type="color"] {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #ccd1d8;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+
+/* =========================
+   UPLOAD
+========================= */
+
+.upload-area {
+    border: 2px dashed #9ca3af;
+    border-radius: 12px;
+    padding: 35px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f9fafb;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.upload-area strong {
+    color: #2563eb;
+}
+
+#fileInput {
+    display: none;
+}
+
+
+/* =========================
+   IMAGE LIST
+========================= */
+
+.image-list {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(180px, 1fr)
+        );
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.image-item {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: grab;
+    transition: 0.15s;
+}
+
+.image-item:active {
+    cursor: grabbing;
+}
+
+.image-item.dragging {
+    opacity: 0.4;
+}
+
+.image-item.drag-over {
+    border: 3px solid #2563eb;
+    transform: scale(1.02);
+}
+
+.thumbnail {
+    position: relative;
+    height: 150px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ddd;
+    margin-bottom: 10px;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #e5e7eb;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.image-number {
+    font-weight: bold;
+    color: #111827;
+    margin-bottom: 7px;
+}
+
+.image-details {
+    width: 100%;
+    min-height: 65px;
+    resize: vertical;
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+
+.remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    background: rgba(220,38,38,0.9);
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 2;
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+button {
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.primary {
+    background: #2563eb;
+    color: white;
+}
+
+.secondary {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.primary:hover {
+    background: #1d4ed8;
+}
+
+
+/* =========================
+   PREVIEW
+========================= */
+
+.preview-container {
+    overflow: auto;
+    background: #d1d5db;
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+#canvas {
+    display: block;
+    margin: auto;
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.25);
+    background: white;
+}
+
+.info {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    .app {
+        margin-top: 10px;
+    }
+
+    .panel {
+        padding: 15px;
+    }
+
+    .preview-container {
+        padding: 10px;
+    }
+
+    .image-list {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     LOGIN PAGE
+========================= -->
+
+<div id="loginPage">
+
+    <div class="login-box">
+
+        <h1>🔐 Collage Maker</h1>
+
+        <p>Private access</p>
+
+        <input
+            type="email"
+            id="email"
+            placeholder="Email address"
+            autocomplete="username"
+        >
+
+        <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            autocomplete="current-password"
+        >
+
+        <button
+            class="login-button"
+            id="loginButton"
+        >
+            Login
+        </button>
+
+        <div id="errorMessage"></div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================
+     APP
+========================= -->
+
+<div id="appPage">
+
+
+<header>
+
+    <h1>📸 Collage Maker</h1>
+
+    <button
+        class="logout"
+        id="logoutButton"
+    >
+        Logout
+    </button>
+
+</header>
+
+
+<div class="app">
+
+
+<!-- =========================
+     SETTINGS
+========================= -->
+
+<div class="panel">
+
+    <h2>1. Collage Settings</h2>
+
+    <div class="controls">
+
+
+        <div>
+
+            <label>
+                Header
+            </label>
+
+            <input
+                type="text"
+                id="headerText"
+                value="My Photo Collage"
+            >
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Page Size
+            </label>
+
+            <select id="pageSize">
+
+                <option value="a4">
+                    A4
+                </option>
+
+                <option value="letter">
+                    Letter
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Orientation
+            </label>
+
+            <select id="orientation">
+
+                <option value="portrait">
+                    Portrait
+                </option>
+
+                <option value="landscape">
+                    Landscape
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Columns
+            </label>
+
+            <select id="columns">
+
+                <option value="1">
+                    1
+                </option>
+
+                <option value="2" selected>
+                    2
+                </option>
+
+                <option value="3">
+                    3
+                </option>
+
+                <option value="4">
+                    4
+                </option>
+
+                <option value="5">
+                    5
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Image Spacing
+            </label>
+
+            <input
+                type="number"
+                id="spacing"
+                value="10"
+                min="0"
+                max="100"
+            >
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Page Margin
+            </label>
+
+            <input
+                type="number"
+                id="margin"
+                value="30"
+                min="0"
+                max="150"
+            >
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Header Size
+            </label>
+
+            <input
+                type="number"
+                id="headerSize"
+                value="40"
+                min="10"
+                max="100"
+            >
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Background
+            </label>
+
+            <input
+                type="color"
+                id="background"
+                value="#ffffff"
+            >
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Starting Page Number
+            </label>
+
+            <input
+                type="number"
+                id="startingPageNumber"
+                value="1"
+                min="1"
+            >
+
+        </div>
+
+
+        <div>
+
+            <label>
+                Starting Image Number
+            </label>
+
+            <input
+                type="number"
+                id="startingImageNumber"
+                value="1"
+                min="1"
+            >
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================
+     IMAGES
+========================= -->
+
+<div class="panel">
+
+    <h2>2. Add Images</h2>
+
+    <div
+        class="upload-area"
+        id="uploadArea"
+    >
+
+        <strong>
+            Click here
+        </strong>
+
+        or drag images here
+
+        <br>
+
+        <span class="info">
+            Select multiple JPG, PNG or WEBP images.
+        </span>
+
+    </div>
+
+
+    <input
+        type="file"
+        id="fileInput"
+        accept="image/*"
+        multiple
+    >
+
+
+    <div
+        class="image-list"
+        id="imageList"
+    >
+    </div>
+
+
+    <div class="buttons">
+
+        <button
+            class="secondary"
+            id="clearButton"
+        >
+            Clear Images
+        </button>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================
+     PREVIEW
+========================= -->
+
+<div class="panel">
+
+    <h2>3. Preview</h2>
+
+    <div class="preview-container">
+
+        <canvas id="canvas"></canvas>
+
+    </div>
+
+
+    <div class="buttons">
+
+        <button
+            class="primary"
+            id="downloadButton"
+        >
+            📄 Download PDF
+        </button>
+
+    </div>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+
+<script type="module">
+
+
+/* =========================
+   FIREBASE
+========================= */
+
+import {
+    initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+
+
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+}
+from
+"https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyC-FbJVXLEgLGEFiyHIpG2wEZlLj7_kYNg",
+
+    authDomain:
+        "collage-maker-69004.firebaseapp.com",
+
+    projectId:
+        "collage-maker-69004",
+
+    storageBucket:
+        "collage-maker-69004.firebasestorage.app",
+
+    messagingSenderId:
+        "657246424756",
+
+    appId:
+        "1:657246424756:web:eee039fe60a6af0e49d1e1",
+
+    measurementId:
+        "G-HKM9MCHZFC"
+
+};
+
+
+const app =
+    initializeApp(
+        firebaseConfig
+    );
+
+
+const auth =
+    getAuth(app);
+
+
+
+/* =========================
+   LOGIN
+========================= */
+
+const loginPage =
+    document.getElementById(
+        "loginPage"
+    );
+
+const appPage =
+    document.getElementById(
+        "appPage"
+    );
+
+const loginButton =
+    document.getElementById(
+        "loginButton"
+    );
+
+const logoutButton =
+    document.getElementById(
+        "logoutButton"
+    );
+
+const errorMessage =
+    document.getElementById(
+        "errorMessage"
+    );
+
+
+loginButton.addEventListener(
+    "click",
+    async () => {
+
+        const email =
+            document
+                .getElementById("email")
+                .value
+                .trim();
+
+        const password =
+            document
+                .getElementById("password")
+                .value;
+
+
+        errorMessage.style.display =
+            "none";
+
+
+        if (!email || !password) {
+
+            showError(
+                "Please enter your email and password."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+            showError(
+                "Incorrect email or password."
+            );
+
+        }
+
+    }
+);
+
+
+function showError(message) {
+
+    errorMessage.textContent =
+        message;
+
+    errorMessage.style.display =
+        "block";
+
+}
+
+
+logoutButton.addEventListener(
+    "click",
+    async () => {
+
+        await signOut(auth);
+
+    }
+);
+
+
+onAuthStateChanged(
+    auth,
+    user => {
+
+        if (user) {
+
+            loginPage.style.display =
+                "none";
+
+            appPage.style.display =
+                "block";
+
+        }
+
+        else {
+
+            loginPage.style.display =
+                "flex";
+
+            appPage.style.display =
+                "none";
+
+        }
+
+    }
+);
+
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const fileInput =
+    document.getElementById(
+        "fileInput"
+    );
+
+const uploadArea =
+    document.getElementById(
+        "uploadArea"
+    );
+
+const imageList =
+    document.getElementById(
+        "imageList"
+    );
+
+const clearButton =
+    document.getElementById(
+        "clearButton"
+    );
+
+const downloadButton =
+    document.getElementById(
+        "downloadButton"
+    );
+
+const headerText =
+    document.getElementById(
+        "headerText"
+    );
+
+const pageSize =
+    document.getElementById(
+        "pageSize"
+    );
+
+const orientation =
+    document.getElementById(
+        "orientation"
+    );
+
+const columns =
+    document.getElementById(
+        "columns"
+    );
+
+const spacing =
+    document.getElementById(
+        "spacing"
+    );
+
+const margin =
+    document.getElementById(
+        "margin"
+    );
+
+const headerSize =
+    document.getElementById(
+        "headerSize"
+    );
+
+const background =
+    document.getElementById(
+        "background"
+    );
+
+const startingPageNumber =
+    document.getElementById(
+        "startingPageNumber"
+    );
+
+const startingImageNumber =
+    document.getElementById(
+        "startingImageNumber"
+    );
+
+const canvas =
+    document.getElementById(
+        "canvas"
+    );
+
+const ctx =
+    canvas.getContext(
+        "2d"
+    );
+
+
+let images = [];
+
+
+
+/* =========================
+   UPLOAD
+========================= */
+
+uploadArea.addEventListener(
+    "click",
+    () => fileInput.click()
+);
+
+
+fileInput.addEventListener(
+    "change",
+    event => {
+
+        addFiles(
+            event.target.files
+        );
+
+        fileInput.value = "";
+
+    }
+);
+
+
+uploadArea.addEventListener(
+    "dragover",
+    event => {
+
+        event.preventDefault();
+
+        uploadArea.classList.add(
+            "dragover"
+        );
+
+    }
+);
+
+
+uploadArea.addEventListener(
+    "dragleave",
+    () => {
+
+        uploadArea.classList.remove(
+            "dragover"
+        );
+
+    }
+);
+
+
+uploadArea.addEventListener(
+    "drop",
+    event => {
+
+        event.preventDefault();
+
+        uploadArea.classList.remove(
+            "dragover"
+        );
+
+        addFiles(
+            event.dataTransfer.files
+        );
+
+    }
+);
+
+
+
+function addFiles(files) {
+
+    [...files].forEach(
+        file => {
+
+            if (
+                !file.type.startsWith(
+                    "image/"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                event => {
+
+                    const img =
+                        new Image();
+
+
+                    img.onload =
+                        () => {
+
+                            images.push({
+
+                                image:
+                                    img,
+
+                                name:
+                                    file.name,
+
+                                details:
+                                    ""
+
+                            });
+
+
+                            renderThumbnails();
+
+                            renderCanvas();
+
+                        };
+
+
+                    img.src =
+                        event.target.result;
+
+                };
+
+
+            reader.readAsDataURL(
+                file
+            );
+
+        }
+    );
+
+}
+
+
+
+/* =========================
+   THUMBNAILS
+========================= */
+
 function renderThumbnails() {
 
     imageList.innerHTML = "";
 
-    images.forEach((item, index) => {
 
-        const div =
-            document.createElement("div");
-
-        div.className =
-            "thumbnail";
-
-        div.draggable = true;
-
-        div.dataset.index =
-            index;
-
-        div.innerHTML = `
-            <img
-                src="${item.image.src}"
-                draggable="false"
-            >
-
-            <button
-                class="remove-image"
-                data-index="${index}">
-                ×
-            </button>
-        `;
-
-        imageList.appendChild(div);
-    });
+    const firstImageNumber =
+        Number(
+            startingImageNumber.value
+        ) || 1;
 
 
-    /*
-     * =========================
-     * REMOVE IMAGE
-     * =========================
-     */
+    images.forEach(
+        (item, index) => {
 
-    document
-        .querySelectorAll(".remove-image")
-        .forEach(button => {
+            const imageNumber =
+                firstImageNumber +
+                index;
 
-            button.addEventListener(
-                "click",
-                function(event) {
 
-                    event.stopPropagation();
+            const div =
+                document.createElement(
+                    "div"
+                );
 
-                    const index =
-                        Number(
-                            this.dataset.index
-                        );
 
-                    images.splice(
-                        index,
-                        1
-                    );
+            div.className =
+                "image-item";
 
-                    renderThumbnails();
 
-                    renderCanvas();
+            div.draggable =
+                true;
 
-                }
+
+            div.dataset.index =
+                index;
+
+
+            div.innerHTML = `
+
+                <div class="thumbnail">
+
+                    <img
+                        src="${item.image.src}"
+                        draggable="false"
+                    >
+
+                    <button
+                        class="remove-image"
+                        data-index="${index}"
+                        type="button"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+                <div class="image-number">
+                    Image ${imageNumber}
+                </div>
+
+
+                <textarea
+                    class="image-details"
+                    data-index="${index}"
+                    placeholder="Enter details for image ${imageNumber}..."
+                >${escapeHtml(item.details)}</textarea>
+
+            `;
+
+
+            imageList.appendChild(
+                div
             );
 
-        });
+        }
+    );
 
 
-    /*
-     * =========================
-     * DRAG & DROP
-     * =========================
-     */
+    /* =========================
+       REMOVE
+    ========================= */
 
     document
-        .querySelectorAll(".thumbnail")
-        .forEach(thumbnail => {
+        .querySelectorAll(
+            ".remove-image"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    function(event) {
+
+                        event.stopPropagation();
 
 
-            /*
-             * START DRAG
-             */
-
-            thumbnail.addEventListener(
-                "dragstart",
-                function(event) {
-
-                    this.classList.add(
-                        "dragging"
-                    );
-
-                    event.dataTransfer.effectAllowed =
-                        "move";
-
-                    event.dataTransfer.setData(
-                        "text/plain",
-                        this.dataset.index
-                    );
-
-                }
-            );
-
-
-            /*
-             * END DRAG
-             */
-
-            thumbnail.addEventListener(
-                "dragend",
-                function() {
-
-                    this.classList.remove(
-                        "dragging"
-                    );
-
-                    document
-                        .querySelectorAll(
-                            ".thumbnail"
-                        )
-                        .forEach(item => {
-
-                            item.classList.remove(
-                                "drag-over"
+                        const index =
+                            Number(
+                                this.dataset.index
                             );
 
-                        });
 
-                }
-            );
-
-
-            /*
-             * DRAG OVER
-             */
-
-            thumbnail.addEventListener(
-                "dragover",
-                function(event) {
-
-                    event.preventDefault();
-
-                    event.dataTransfer.dropEffect =
-                        "move";
-
-                    this.classList.add(
-                        "drag-over"
-                    );
-
-                }
-            );
-
-
-            /*
-             * DRAG LEAVE
-             */
-
-            thumbnail.addEventListener(
-                "dragleave",
-                function() {
-
-                    this.classList.remove(
-                        "drag-over"
-                    );
-
-                }
-            );
-
-
-            /*
-             * DROP
-             */
-
-            thumbnail.addEventListener(
-                "drop",
-                function(event) {
-
-                    event.preventDefault();
-
-                    this.classList.remove(
-                        "drag-over"
-                    );
-
-
-                    const fromIndex =
-                        Number(
-                            event.dataTransfer
-                                .getData(
-                                    "text/plain"
-                                )
+                        images.splice(
+                            index,
+                            1
                         );
 
 
-                    const toIndex =
-                        Number(
+                        renderThumbnails();
+
+                        renderCanvas();
+
+                    }
+                );
+
+            }
+        );
+
+
+    /* =========================
+       DETAILS
+    ========================= */
+
+    document
+        .querySelectorAll(
+            ".image-details"
+        )
+        .forEach(
+            textarea => {
+
+                textarea.addEventListener(
+                    "input",
+                    function(event) {
+
+                        event.stopPropagation();
+
+
+                        const index =
+                            Number(
+                                this.dataset.index
+                            );
+
+
+                        if (
+                            images[index]
+                        ) {
+
+                            images[index].details =
+                                this.value;
+
+                        }
+
+
+                        renderCanvas();
+
+                    }
+                );
+
+
+                textarea.addEventListener(
+                    "mousedown",
+                    event => {
+
+                        event.stopPropagation();
+
+                    }
+                );
+
+            }
+        );
+
+
+    /* =========================
+       DRAG & DROP
+    ========================= */
+
+    document
+        .querySelectorAll(
+            ".image-item"
+        )
+        .forEach(
+            item => {
+
+
+                item.addEventListener(
+                    "dragstart",
+                    function(event) {
+
+                        this.classList.add(
+                            "dragging"
+                        );
+
+
+                        event.dataTransfer.effectAllowed =
+                            "move";
+
+
+                        event.dataTransfer.setData(
+                            "text/plain",
                             this.dataset.index
                         );
 
-
-                    if (
-                        Number.isNaN(
-                            fromIndex
-                        )
-                    ) {
-                        return;
                     }
+                );
 
 
-                    if (
-                        fromIndex ===
-                        toIndex
-                    ) {
-                        return;
+                item.addEventListener(
+                    "dragend",
+                    function() {
+
+                        this.classList.remove(
+                            "dragging"
+                        );
+
+
+                        document
+                            .querySelectorAll(
+                                ".image-item"
+                            )
+                            .forEach(
+                                element => {
+
+                                    element.classList.remove(
+                                        "drag-over"
+                                    );
+
+                                }
+                            );
+
                     }
+                );
+
+
+                item.addEventListener(
+                    "dragover",
+                    function(event) {
+
+                        event.preventDefault();
+
+                        event.dataTransfer.dropEffect =
+                            "move";
+
+                        this.classList.add(
+                            "drag-over"
+                        );
+
+                    }
+                );
+
+
+                item.addEventListener(
+                    "dragleave",
+                    function() {
+
+                        this.classList.remove(
+                            "drag-over"
+                        );
+
+                    }
+                );
+
+
+                item.addEventListener(
+                    "drop",
+                    function(event) {
+
+                        event.preventDefault();
+
+
+                        this.classList.remove(
+                            "drag-over"
+                        );
+
+
+                        const fromIndex =
+                            Number(
+                                event.dataTransfer
+                                    .getData(
+                                        "text/plain"
+                                    )
+                            );
+
+
+                        const toIndex =
+                            Number(
+                                this.dataset.index
+                            );
+
+
+                        if (
+                            Number.isNaN(
+                                fromIndex
+                            )
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        if (
+                            fromIndex ===
+                            toIndex
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const movedImage =
+                            images.splice(
+                                fromIndex,
+                                1
+                            )[0];
+
+
+                        images.splice(
+                            toIndex,
+                            0,
+                            movedImage
+                        );
+
+
+                        renderThumbnails();
+
+                        renderCanvas();
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+
+/* =========================
+   ESCAPE HTML
+========================= */
+
+function escapeHtml(text) {
+
+    return String(text)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+
+/* =========================
+   CLEAR
+========================= */
+
+clearButton.addEventListener(
+    "click",
+    () => {
+
+        images = [];
+
+        renderThumbnails();
+
+        renderCanvas();
+
+    }
+);
+
+
+
+/* =========================
+   SETTINGS
+========================= */
+
+[
+    headerText,
+    pageSize,
+    orientation,
+    columns,
+    spacing,
+    margin,
+    headerSize,
+    background,
+    startingPageNumber,
+    startingImageNumber
+
+].forEach(
+    element => {
+
+        element.addEventListener(
+            "input",
+            () => {
+
+                renderThumbnails();
+
+                renderCanvas();
+
+            }
+        );
+
+
+        element.addEventListener(
+            "change",
+            () => {
+
+                renderThumbnails();
+
+                renderCanvas();
+
+            }
+        );
+
+    }
+);
+
+
+
+/* =========================
+   SETTINGS OBJECT
+========================= */
+
+function getSettings() {
+
+    return {
+
+        header:
+            headerText.value ||
+            "My Photo Collage",
+
+        pageSize:
+            pageSize.value,
+
+        orientation:
+            orientation.value,
+
+        columns:
+            Number(
+                columns.value
+            ),
+
+        spacing:
+            Number(
+                spacing.value
+            ),
+
+        margin:
+            Number(
+                margin.value
+            ),
+
+        headerSize:
+            Number(
+                headerSize.value
+            ),
+
+        background:
+            background.value,
+
+        startingPageNumber:
+            Number(
+                startingPageNumber.value
+            ) || 1,
+
+        startingImageNumber:
+            Number(
+                startingImageNumber.value
+            ) || 1
+
+    };
+
+}
+
+
+
+/* =========================
+   PAGE DIMENSIONS
+========================= */
+
+function getPageDimensions(
+    settings
+) {
+
+    let width;
+    let height;
+
+
+    if (
+        settings.pageSize ===
+        "a4"
+    ) {
+
+        width = 2480;
+        height = 3508;
+
+    }
+
+    else {
+
+        width = 2550;
+        height = 3300;
+
+    }
+
+
+    if (
+        settings.orientation ===
+        "landscape"
+    ) {
+
+        [
+            width,
+            height
+        ] = [
+            height,
+            width
+        ];
+
+    }
+
+
+    return {
+        width,
+        height
+    };
+
+}
+
+
+
+/* =========================
+   DRAW IMAGE WITHOUT
+   STRETCHING
+========================= */
+
+function drawImageContain(
+    context,
+    image,
+    x,
+    y,
+    width,
+    height
+) {
+
+    const imageRatio =
+        image.width /
+        image.height;
+
+
+    const boxRatio =
+        width /
+        height;
+
+
+    let drawWidth;
+    let drawHeight;
+
+
+    if (
+        imageRatio >
+        boxRatio
+    ) {
+
+        drawWidth =
+            width;
+
+        drawHeight =
+            width /
+            imageRatio;
+
+    }
+
+    else {
+
+        drawHeight =
+            height;
+
+        drawWidth =
+            height *
+            imageRatio;
+
+    }
+
+
+    const drawX =
+        x +
+        (
+            width -
+            drawWidth
+        ) / 2;
+
+
+    const drawY =
+        y +
+        (
+            height -
+            drawHeight
+        ) / 2;
+
+
+    context.drawImage(
+        image,
+        drawX,
+        drawY,
+        drawWidth,
+        drawHeight
+    );
+
+}
+
+
+
+/* =========================
+   TEXT WRAPPING
+========================= */
+
+function wrapText(
+    context,
+    text,
+    maxWidth
+) {
+
+    const words =
+        text.split(
+            /\s+/
+        );
+
+
+    const lines = [];
+
+    let line = "";
+
+
+    words.forEach(
+        word => {
+
+            const testLine =
+                line
+                    ? line +
+                      " " +
+                      word
+                    : word;
+
+
+            const testWidth =
+                context.measureText(
+                    testLine
+                ).width;
+
+
+            if (
+                testWidth >
+                maxWidth &&
+                line
+            ) {
+
+                lines.push(
+                    line
+                );
+
+                line =
+                    word;
+
+            }
+
+            else {
+
+                line =
+                    testLine;
+
+            }
+
+        }
+    );
+
+
+    if (line) {
+
+        lines.push(
+            line
+        );
+
+    }
+
+
+    return lines;
+
+}
+
+
+
+/* =========================
+   CANVAS PREVIEW
+========================= */
+
+function renderCanvas() {
+
+    const settings =
+        getSettings();
+
+
+    const page =
+        getPageDimensions(
+            settings
+        );
+
+
+    canvas.width =
+        page.width;
+
+    canvas.height =
+        page.height;
+
+
+    ctx.fillStyle =
+        settings.background;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* HEADER */
+
+    ctx.fillStyle =
+        "#111827";
+
+
+    ctx.font =
+        `bold ${settings.headerSize}px Arial`;
+
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.textBaseline =
+        "middle";
+
+
+    ctx.fillText(
+        settings.header,
+        canvas.width / 2,
+        settings.margin +
+        settings.headerSize
+    );
+
+
+    /* PAGE NUMBER */
+
+    ctx.font =
+        "22px Arial";
+
+
+    ctx.fillStyle =
+        "#6b7280";
+
+
+    ctx.fillText(
+        "Page " +
+        settings.startingPageNumber,
+        canvas.width / 2,
+        canvas.height -
+        settings.margin / 2
+    );
+
+
+    if (
+        images.length === 0
+    ) {
+
+        ctx.fillStyle =
+            "#9ca3af";
+
+
+        ctx.font =
+            "30px Arial";
+
+
+        ctx.fillText(
+            "Add images to create your collage",
+            canvas.width / 2,
+            canvas.height / 2
+        );
+
+
+        return;
+
+    }
+
+
+    const cols =
+        settings.columns;
+
+
+    const rows =
+        Math.ceil(
+            images.length /
+            cols
+        );
+
+
+    const topSpace =
+        settings.margin +
+        settings.headerSize *
+        2;
+
+
+    const bottomSpace =
+        settings.margin *
+        2;
+
+
+    const availableWidth =
+        canvas.width -
+        settings.margin *
+        2;
+
+
+    const availableHeight =
+        canvas.height -
+        topSpace -
+        bottomSpace;
+
+
+    const cellWidth =
+        (
+            availableWidth -
+            settings.spacing *
+            (cols - 1)
+        ) / cols;
+
+
+    const cellHeight =
+        (
+            availableHeight -
+            settings.spacing *
+            (rows - 1)
+        ) / rows;
+
+
+    images.forEach(
+        (item, index) => {
+
+            const row =
+                Math.floor(
+                    index /
+                    cols
+                );
+
+
+            const col =
+                index %
+                cols;
+
+
+            const x =
+                settings.margin +
+                col *
+                (
+                    cellWidth +
+                    settings.spacing
+                );
+
+
+            const y =
+                topSpace +
+                row *
+                (
+                    cellHeight +
+                    settings.spacing
+                );
+
+
+            const imageNumber =
+                settings.startingImageNumber +
+                index;
+
+
+            /*
+             * Reserve bottom part
+             * of cell for details.
+             */
+
+            const detailsHeight =
+                Math.min(
+                    180,
+                    cellHeight *
+                    0.28
+                );
+
+
+            const imageHeight =
+                cellHeight -
+                detailsHeight -
+                15;
+
+
+            drawImageContain(
+                ctx,
+                item.image,
+                x,
+                y,
+                cellWidth,
+                imageHeight
+            );
+
+
+            /*
+             * IMAGE NUMBER
+             */
+
+            ctx.textAlign =
+                "left";
+
+
+            ctx.textBaseline =
+                "top";
+
+
+            ctx.fillStyle =
+                "#111827";
+
+
+            ctx.font =
+                "bold 24px Arial";
+
+
+            ctx.fillText(
+                imageNumber +
+                ".",
+                x,
+                y +
+                imageHeight +
+                5
+            );
+
+
+            /*
+             * DETAILS
+             */
+
+            if (
+                item.details &&
+                item.details.trim()
+            ) {
+
+                ctx.font =
+                    "20px Arial";
+
+
+                const detailsX =
+                    x + 35;
+
+
+                const detailsWidth =
+                    cellWidth - 35;
+
+
+                const lines =
+                    wrapText(
+                        ctx,
+                        item.details.trim(),
+                        detailsWidth
+                    );
+
+
+                lines
+                    .slice(
+                        0,
+                        5
+                    )
+                    .forEach(
+                        (
+                            line,
+                            lineIndex
+                        ) => {
+
+                            ctx.fillText(
+                                line,
+                                detailsX,
+                                y +
+                                imageHeight +
+                                5 +
+                                lineIndex *
+                                25
+                            );
+
+                        }
+                    );
+
+            }
+
+        }
+    );
+
+}
+
+
+
+/* =========================
+   PDF DOWNLOAD
+========================= */
+
+downloadButton.addEventListener(
+    "click",
+    () => {
+
+        if (
+            images.length === 0
+        ) {
+
+            alert(
+                "Please add at least one image."
+            );
+
+            return;
+
+        }
+
+
+        const settings =
+            getSettings();
+
+
+        /*
+         * PDF dimensions in mm
+         */
+
+        let pdfWidth;
+        let pdfHeight;
+
+
+        if (
+            settings.pageSize ===
+            "a4"
+        ) {
+
+            pdfWidth = 210;
+            pdfHeight = 297;
+
+        }
+
+        else {
+
+            pdfWidth = 215.9;
+            pdfHeight = 279.4;
+
+        }
+
+
+        if (
+            settings.orientation ===
+            "landscape"
+        ) {
+
+            [
+                pdfWidth,
+                pdfHeight
+            ] = [
+                pdfHeight,
+                pdfWidth
+            ];
+
+        }
+
+
+        const pdf =
+            new jspdf.jsPDF({
+
+                orientation:
+                    settings.orientation,
+
+                unit:
+                    "mm",
+
+                format:
+                    settings.pageSize ===
+                    "a4"
+                        ? "a4"
+                        : "letter"
+
+            });
+
+
+        /*
+         * PDF layout
+         */
+
+        const marginMM =
+            Math.max(
+                5,
+                settings.margin /
+                10
+            );
+
+
+        const spacingMM =
+            Math.max(
+                0,
+                settings.spacing /
+                10
+            );
+
+
+        const headerSizeMM =
+            Math.max(
+                5,
+                settings.headerSize /
+                8
+            );
+
+
+        const headerY =
+            marginMM +
+            headerSizeMM;
+
+
+        const topSpace =
+            marginMM +
+            headerSizeMM *
+            2;
+
+
+        const bottomSpace =
+            marginMM *
+            1.8;
+
+
+        const availableWidth =
+            pdfWidth -
+            marginMM *
+            2;
+
+
+        const availableHeight =
+            pdfHeight -
+            topSpace -
+            bottomSpace;
+
+
+        const cols =
+            settings.columns;
+
+
+        /*
+         * Estimate row height.
+         *
+         * We use a fixed number of
+         * rows per page so that
+         * additional images create
+         * additional PDF pages.
+         */
+
+        const rowHeight =
+            75;
+
+
+        const rowsPerPage =
+            Math.max(
+                1,
+                Math.floor(
+                    (
+                        availableHeight +
+                        spacingMM
+                    ) /
+                    (
+                        rowHeight +
+                        spacingMM
+                    )
+                )
+            );
+
+
+        const imagesPerPage =
+            cols *
+            rowsPerPage;
+
+
+        /*
+         * Create pages.
+         */
+
+        let pageNumber =
+            settings.startingPageNumber;
+
+
+        for (
+            let start = 0;
+            start < images.length;
+            start += imagesPerPage
+        ) {
+
+
+            if (
+                start > 0
+            ) {
+
+                pdf.addPage(
+                    settings.pageSize ===
+                    "a4"
+                        ? "a4"
+                        : "letter",
+
+                    settings.orientation
+                );
+
+            }
+
+
+            /*
+             * Background
+             */
+
+            const rgb =
+                hexToRgb(
+                    settings.background
+                );
+
+
+            pdf.setFillColor(
+                rgb.r,
+                rgb.g,
+                rgb.b
+            );
+
+
+            pdf.rect(
+                0,
+                0,
+                pdfWidth,
+                pdfHeight,
+                "F"
+            );
+
+
+            /*
+             * Header
+             */
+
+            pdf.setTextColor(
+                17,
+                24,
+                39
+            );
+
+
+            pdf.setFont(
+                "helvetica",
+                "bold"
+            );
+
+
+            pdf.setFontSize(
+                headerSizeMM
+            );
+
+
+            pdf.text(
+                settings.header,
+                pdfWidth / 2,
+                headerY,
+                {
+                    align: "center"
+                }
+            );
+
+
+            /*
+             * Images
+             */
+
+            const pageImages =
+                images.slice(
+                    start,
+                    start +
+                    imagesPerPage
+                );
+
+
+            pageImages.forEach(
+                (
+                    item,
+                    localIndex
+                ) => {
+
+                    const globalIndex =
+                        start +
+                        localIndex;
+
+
+                    const row =
+                        Math.floor(
+                            localIndex /
+                            cols
+                        );
+
+
+                    const col =
+                        localIndex %
+                        cols;
+
+
+                    const x =
+                        marginMM +
+                        col *
+                        (
+                            (
+                                availableWidth -
+                                spacingMM *
+                                (cols - 1)
+                            ) /
+                            cols +
+                            spacingMM
+                        );
+
+
+                    const cellWidth =
+                        (
+                            availableWidth -
+                            spacingMM *
+                            (cols - 1)
+                        ) /
+                        cols;
+
+
+                    const y =
+                        topSpace +
+                        row *
+                        (
+                            rowHeight +
+                            spacingMM
+                        );
 
 
                     /*
-                     * Move image
+                     * Image number
                      */
 
-                    const movedImage =
-                        images.splice(
-                            fromIndex,
-                            1
-                        )[0];
+                    const imageNumber =
+                        settings.startingImageNumber +
+                        globalIndex;
 
 
-                    images.splice(
-                        toIndex,
+                    /*
+                     * Image area
+                     */
+
+                    const imageAreaHeight =
+                        rowHeight -
+                        20;
+
+
+                    /*
+                     * Convert image dimensions
+                     * to fit the cell.
+                     */
+
+                    const ratio =
+                        item.image.width /
+                        item.image.height;
+
+
+                    let drawWidth =
+                        cellWidth;
+
+
+                    let drawHeight =
+                        drawWidth /
+                        ratio;
+
+
+                    if (
+                        drawHeight >
+                        imageAreaHeight
+                    ) {
+
+                        drawHeight =
+                            imageAreaHeight;
+
+                        drawWidth =
+                            drawHeight *
+                            ratio;
+
+                    }
+
+
+                    const imageX =
+                        x +
+                        (
+                            cellWidth -
+                            drawWidth
+                        ) /
+                        2;
+
+
+                    const imageY =
+                        y +
+                        (
+                            imageAreaHeight -
+                            drawHeight
+                        ) /
+                        2;
+
+
+                    const tempCanvas =
+                        document.createElement(
+                            "canvas"
+                        );
+
+
+                    tempCanvas.width =
+                        item.image.width;
+
+
+                    tempCanvas.height =
+                        item.image.height;
+
+
+                    const tempCtx =
+                        tempCanvas.getContext(
+                            "2d"
+                        );
+
+
+                    tempCtx.drawImage(
+                        item.image,
                         0,
-                        movedImage
+                        0
+                    );
+
+
+                    const imageData =
+                        tempCanvas.toDataURL(
+                            "image/jpeg",
+                            0.92
+                        );
+
+
+                    pdf.addImage(
+                        imageData,
+                        "JPEG",
+                        imageX,
+                        imageY,
+                        drawWidth,
+                        drawHeight
                     );
 
 
                     /*
-                     * Rebuild thumbnails
-                     * and update collage
+                     * Number
                      */
 
-                    renderThumbnails();
+                    pdf.setFont(
+                        "helvetica",
+                        "bold"
+                    );
 
-                    renderCanvas();
+
+                    pdf.setFontSize(
+                        10
+                    );
+
+
+                    pdf.setTextColor(
+                        17,
+                        24,
+                        39
+                    );
+
+
+                    pdf.text(
+                        imageNumber +
+                        ".",
+                        x,
+                        y +
+                        imageAreaHeight +
+                        6
+                    );
+
+
+                    /*
+                     * Details
+                     */
+
+                    if (
+                        item.details &&
+                        item.details.trim()
+                    ) {
+
+                        pdf.setFont(
+                            "helvetica",
+                            "normal"
+                        );
+
+
+                        pdf.setFontSize(
+                            8
+                        );
+
+
+                        const detailLines =
+                            pdf.splitTextToSize(
+                                item.details.trim(),
+                                cellWidth -
+                                8
+                            );
+
+
+                        pdf.text(
+                            detailLines.slice(
+                                0,
+                                3
+                            ),
+                            x + 7,
+                            y +
+                            imageAreaHeight +
+                            6
+                        );
+
+                    }
 
                 }
             );
 
-        });
+
+            /*
+             * PAGE NUMBER
+             */
+
+            pdf.setFont(
+                "helvetica",
+                "normal"
+            );
+
+
+            pdf.setFontSize(
+                8
+            );
+
+
+            pdf.setTextColor(
+                107,
+                114,
+                128
+            );
+
+
+            pdf.text(
+                "Page " +
+                pageNumber,
+                pdfWidth / 2,
+                pdfHeight -
+                marginMM / 2,
+                {
+                    align: "center"
+                }
+            );
+
+
+            pageNumber++;
+
+        }
+
+
+        /*
+         * Filename
+         */
+
+        let filename =
+            settings.header
+                .trim()
+                .replace(
+                    /[^a-z0-9]/gi,
+                    "_"
+                )
+                .replace(
+                    /_+/g,
+                    "_"
+                );
+
+
+        if (!filename) {
+
+            filename =
+                "collage";
+
+        }
+
+
+        pdf.save(
+            filename +
+            ".pdf"
+        );
+
+    }
+);
+
+
+
+/* =========================
+   HEX TO RGB
+========================= */
+
+function hexToRgb(hex) {
+
+    const clean =
+        hex.replace(
+            "#",
+            ""
+        );
+
+
+    return {
+
+        r:
+            parseInt(
+                clean.substring(
+                    0,
+                    2
+                ),
+                16
+            ),
+
+        g:
+            parseInt(
+                clean.substring(
+                    2,
+                    4
+                ),
+                16
+            ),
+
+        b:
+            parseInt(
+                clean.substring(
+                    4,
+                    6
+                ),
+                16
+            )
+
+    };
 
 }
+
+
+
+/* =========================
+   INITIAL
+========================= */
+
+renderCanvas();
+
+</script>
+
+</body>
+
+</html>
