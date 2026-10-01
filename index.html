@@ -1,3071 +1,529 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Private Collage Maker</title>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #eef1f5;
-    color: #222;
-}
-
-/* =========================
-   LOGIN
-========================= */
-
-#loginPage {
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-}
-
-.login-box {
-    background: white;
-    width: 100%;
-    max-width: 400px;
-    padding: 35px;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
-}
-
-.login-box h1 {
-    margin-top: 0;
-    text-align: center;
-}
-
-.login-box p {
-    text-align: center;
-    color: #6b7280;
-}
-
-.login-box input {
-    width: 100%;
-    padding: 13px;
-    margin: 8px 0;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 15px;
-}
-
-.login-button {
-    width: 100%;
-    padding: 13px;
-    margin-top: 10px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.login-button:hover {
-    background: #1d4ed8;
-}
-
-#errorMessage {
-    color: #dc2626;
-    text-align: center;
-    margin-top: 12px;
-    display: none;
-}
-
-/* =========================
-   APP
-========================= */
-
-#appPage {
-    display: none;
-}
-
-header {
-    background: #111827;
-    color: white;
-    padding: 18px 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-header h1 {
-    margin: 0;
-    font-size: 24px;
-}
-
-.logout {
-    background: #374151;
-    color: white;
-    border: none;
-    padding: 9px 15px;
-    border-radius: 7px;
-    cursor: pointer;
-}
-
-.app {
-    max-width: 1200px;
-    margin: 25px auto;
-    padding: 0 15px;
-}
-
-.panel {
-    background: white;
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-}
-
-.controls {
-    display: grid;
-    grid-template-columns: repeat(
-        auto-fit,
-        minmax(180px, 1fr)
-    );
-    gap: 15px;
-}
-
-label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 7px;
-    font-size: 14px;
-}
-
-input[type="text"],
-input[type="number"],
-input[type="email"],
-input[type="password"],
-select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccd1d8;
-    border-radius: 8px;
-    font-size: 15px;
-}
-
-input[type="color"] {
-    width: 100%;
-    height: 42px;
-    border: 1px solid #ccd1d8;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-/* =========================
-   UPLOAD
-========================= */
-
-.upload-area {
-    border: 2px dashed #9ca3af;
-    border-radius: 12px;
-    padding: 35px 20px;
-    text-align: center;
-    cursor: pointer;
-    background: #f9fafb;
-}
-
-.upload-area:hover,
-.upload-area.dragover {
-    border-color: #2563eb;
-    background: #eff6ff;
-}
-
-.upload-area strong {
-    color: #2563eb;
-}
-
-#fileInput {
-    display: none;
-}
-
-/* =========================
-   IMAGE LIST
-========================= */
-
-.image-list {
-    display: grid;
-    grid-template-columns:
-        repeat(
-            auto-fill,
-            minmax(180px, 1fr)
-        );
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.image-item {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 10px;
-    cursor: grab;
-    transition: 0.15s;
-}
-
-.image-item:active {
-    cursor: grabbing;
-}
-
-.image-item.dragging {
-    opacity: 0.4;
-}
-
-.image-item.drag-over {
-    border: 3px solid #2563eb;
-    transform: scale(1.02);
-}
-
-.thumbnail {
-    position: relative;
-    height: 150px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #ddd;
-    margin-bottom: 10px;
-}
-
-.thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #e5e7eb;
-    pointer-events: none;
-    user-select: none;
-    -webkit-user-drag: none;
-}
-
-.image-number {
-    font-weight: bold;
-    color: #111827;
-    margin-bottom: 7px;
-}
-
-.image-details {
-    width: 100%;
-    min-height: 65px;
-    resize: vertical;
-    padding: 8px;
-    border: 1px solid #d1d5db;
-    border-radius: 7px;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 14px;
-}
-
-.remove-image {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 27px;
-    height: 27px;
-    padding: 0;
-    border-radius: 50%;
-    border: none;
-    background: rgba(220,38,38,0.9);
-    color: white;
-    cursor: pointer;
-    font-size: 18px;
-    z-index: 2;
-}
-
-/* =========================
-   PAGE BREAK
-========================= */
-
-.page-break-marker {
-    grid-column: 1 / -1;
-    background: #eff6ff;
-    border: 2px dashed #2563eb;
-    color: #1d4ed8;
-    border-radius: 10px;
-    padding: 12px;
-    text-align: center;
-    font-weight: bold;
-    cursor: default;
-}
-
-.page-break-marker button {
-    margin-left: 10px;
-    padding: 6px 10px;
-    background: #dc2626;
-    color: white;
-    border-radius: 6px;
-    font-size: 12px;
-}
-
-/* =========================
-   BUTTONS
-========================= */
-
-.buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 18px;
-}
-
-button {
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.primary {
-    background: #2563eb;
-    color: white;
-}
-
-.secondary {
-    background: #e5e7eb;
-    color: #111827;
-}
-
-.page-button {
-    background: #7c3aed;
-    color: white;
-}
-
-.primary:hover {
-    background: #1d4ed8;
-}
-
-.page-button:hover {
-    background: #6d28d9;
-}
-
-/* =========================
-   PREVIEW
-========================= */
-
-.preview-container {
-    overflow: auto;
-    background: #d1d5db;
-    padding: 25px;
-    border-radius: 10px;
-    text-align: center;
-}
-
-#canvas {
-    display: block;
-    margin: auto;
-    max-width: 100%;
-    height: auto;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.25);
-    background: white;
-}
-
-.info {
-    color: #6b7280;
-    font-size: 13px;
-    margin-top: 10px;
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 600px) {
-
-    .app {
-        margin-top: 10px;
-    }
-
-    .panel {
-        padding: 15px;
-    }
-
-    .preview-container {
-        padding: 10px;
-    }
-
-    .image-list {
-        grid-template-columns: 1fr;
-    }
-
-}
-
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef1f5;color:#222}
+#loginPage{min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+.login-box{background:#fff;width:100%;max-width:400px;padding:35px;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.12)}
+.login-box h1{margin-top:0;text-align:center}
+.login-box p{text-align:center;color:#6b7280}
+.login-box input{width:100%;padding:13px;margin:8px 0;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
+.login-button{width:100%;padding:13px;margin-top:10px;background:#2563eb;color:#fff}
+.login-button:hover{background:#1d4ed8}
+#errorMessage{color:#dc2626;text-align:center;margin-top:12px;display:none}
+#appPage{display:none}
+header{background:#111827;color:#fff;padding:18px 25px;display:flex;justify-content:space-between;align-items:center}
+header h1{margin:0;font-size:24px}
+.logout{background:#374151;color:#fff;padding:9px 15px;border-radius:7px}
+.app{max-width:1200px;margin:25px auto;padding:0 15px}
+.panel{background:#fff;border-radius:14px;padding:20px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,.07)}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px}
+label{display:block;font-weight:bold;margin-bottom:7px;font-size:14px}
+input[type=text],input[type=number],select{width:100%;padding:10px;border:1px solid #ccd1d8;border-radius:8px;font-size:15px}
+input[type=color]{width:100%;height:42px;border:1px solid #ccd1d8;border-radius:8px;cursor:pointer}
+.upload-area{border:2px dashed #9ca3af;border-radius:12px;padding:35px 20px;text-align:center;cursor:pointer;background:#f9fafb}
+.upload-area:hover,.upload-area.dragover{border-color:#2563eb;background:#eff6ff}
+.upload-area strong{color:#2563eb}
+#fileInput{display:none}
+.image-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;margin-top:20px}
+.image-item{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px;cursor:grab;transition:.15s}
+.image-item.dragging{opacity:.4}
+.image-item.drag-over{border:3px solid #2563eb;transform:scale(1.02)}
+.thumbnail{position:relative;height:150px;border-radius:8px;overflow:hidden;background:#e5e7eb;margin-bottom:10px}
+.thumbnail img{width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+.image-number{font-weight:bold;margin-bottom:7px}
+.image-details{width:100%;min-height:65px;resize:vertical;padding:8px;border:1px solid #d1d5db;border-radius:7px;font-family:inherit;font-size:14px}
+.remove-image{position:absolute;top:5px;right:5px;width:27px;height:27px;padding:0;border-radius:50%;background:rgba(220,38,38,.9);color:#fff;font-size:18px;z-index:2}
+.page-break-marker{grid-column:1/-1;background:#eff6ff;border:2px dashed #2563eb;color:#1d4ed8;border-radius:10px;padding:12px;text-align:center;font-weight:bold}
+.page-break-marker button{margin-left:10px;padding:6px 10px;background:#dc2626;color:#fff;font-size:12px}
+.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px}
+.primary{background:#2563eb;color:#fff}
+.primary:hover{background:#1d4ed8}
+.secondary{background:#e5e7eb;color:#111827}
+.page-button{background:#7c3aed;color:#fff}
+.page-button:hover{background:#6d28d9}
+.preview-container{overflow:auto;background:#d1d5db;padding:25px;border-radius:10px;text-align:center}
+#canvas{display:block;margin:auto;max-width:100%;height:auto;box-shadow:0 5px 25px rgba(0,0,0,.25);background:#fff}
+.info{color:#6b7280;font-size:13px;margin-top:10px}
+@media(max-width:600px){.app{margin-top:10px}.panel{padding:15px}.preview-container{padding:10px}.image-list{grid-template-columns:1fr}}
 </style>
-
 </head>
-
 <body>
 
-<!-- =========================
-     LOGIN PAGE
-========================= -->
-
 <div id="loginPage">
-
-    <div class="login-box">
-
-        <h1>🔐 Collage Maker</h1>
-
-        <p>Private access</p>
-
-        <input
-            type="email"
-            id="email"
-            placeholder="Email address"
-            autocomplete="username"
-        >
-
-        <input
-            type="password"
-            id="password"
-            placeholder="Password"
-            autocomplete="current-password"
-        >
-
-        <button
-            class="login-button"
-            id="loginButton"
-        >
-            Login
-        </button>
-
-        <div id="errorMessage"></div>
-
-    </div>
-
+  <div class="login-box">
+    <h1>🔐 Collage Maker</h1>
+    <p>Private access</p>
+    <input type="email" id="email" placeholder="Email address" autocomplete="username">
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <button class="login-button" id="loginButton">Login</button>
+    <div id="errorMessage"></div>
+  </div>
 </div>
-
-<!-- =========================
-     APP
-========================= -->
 
 <div id="appPage">
-
-<header>
-
+  <header>
     <h1>📸 Collage Maker</h1>
+    <button class="logout" id="logoutButton">Logout</button>
+  </header>
 
-    <button
-        class="logout"
-        id="logoutButton"
-    >
-        Logout
-    </button>
-
-</header>
-
-<div class="app">
-
-<!-- =========================
-     SETTINGS
-========================= -->
-
-<div class="panel">
-
-    <h2>1. Collage Settings</h2>
-
-    <div class="controls">
-
-        <div>
-            <label>Header</label>
-
-            <input
-                type="text"
-                id="headerText"
-                value="My Photo Collage"
-            >
-        </div>
-
-        <div>
-            <label>Page Size</label>
-
-            <select id="pageSize">
-                <option value="a4">A4</option>
-                <option value="letter">Letter</option>
-            </select>
-        </div>
-
-        <div>
-            <label>Orientation</label>
-
-            <select id="orientation">
-                <option value="portrait">Portrait</option>
-                <option value="landscape">Landscape</option>
-            </select>
-        </div>
-
-        <div>
-            <label>Columns</label>
-
-            <select id="columns">
-                <option value="1">1</option>
-                <option value="2" selected>2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-            </select>
-        </div>
-
-        <div>
-            <label>Images Per Page</label>
-
-            <select id="imagesPerPage">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="4" selected>4</option>
-                <option value="6">6</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="12">12</option>
-                <option value="16">16</option>
-            </select>
-        </div>
-
-        <div>
-            <label>Image Spacing</label>
-
-            <input
-                type="number"
-                id="spacing"
-                value="10"
-                min="0"
-                max="100"
-            >
-        </div>
-
-        <div>
-            <label>Page Margin</label>
-
-            <input
-                type="number"
-                id="margin"
-                value="30"
-                min="0"
-                max="150"
-            >
-        </div>
-
-        <div>
-            <label>Header Size</label>
-
-            <input
-                type="number"
-                id="headerSize"
-                value="40"
-                min="10"
-                max="100"
-            >
-        </div>
-
-        <div>
-            <label>Background</label>
-
-            <input
-                type="color"
-                id="background"
-                value="#ffffff"
-            >
-        </div>
-
-        <div>
-            <label>Starting Page Number</label>
-
-            <input
-                type="number"
-                id="startingPageNumber"
-                value="1"
-                min="1"
-            >
-        </div>
-
-        <div>
-            <label>Starting Image Number</label>
-
-            <input
-                type="number"
-                id="startingImageNumber"
-                value="1"
-                min="1"
-            >
-        </div>
-
+  <div class="app">
+    <div class="panel">
+      <h2>1. Collage Settings</h2>
+      <div class="controls">
+        <div><label>Header</label><input type="text" id="headerText" value="My Photo Collage"></div>
+        <div><label>Page Size</label>
+          <select id="pageSize"><option value="a4">A4</option><option value="letter">Letter</option></select></div>
+        <div><label>Orientation</label>
+          <select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
+        <div><label>Columns</label>
+          <select id="columns"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div><label>Images Per Page</label>
+          <select id="imagesPerPage"><option>1</option><option>2</option><option selected>4</option><option>6</option><option>8</option><option>9</option><option>12</option><option>16</option></select></div>
+        <div><label>Image Sizing</label>
+          <select id="sizing"><option value="equal" selected>Equal size (same area)</option><option value="fit">Largest that fits</option></select></div>
+        <div><label>Image Spacing</label><input type="number" id="spacing" value="10" min="0" max="100"></div>
+        <div><label>Page Margin</label><input type="number" id="margin" value="30" min="0" max="150"></div>
+        <div><label>Header Size</label><input type="number" id="headerSize" value="40" min="10" max="100"></div>
+        <div><label>Background</label><input type="color" id="background" value="#ffffff"></div>
+        <div><label>Starting Page Number</label><input type="number" id="startingPageNumber" value="1" min="1"></div>
+        <div><label>Starting Image Number</label><input type="number" id="startingImageNumber" value="1" min="1"></div>
+      </div>
     </div>
 
-</div>
-
-<!-- =========================
-     IMAGES
-========================= -->
-
-<div class="panel">
-
-    <h2>2. Add Images</h2>
-
-    <div
-        class="upload-area"
-        id="uploadArea"
-    >
-
-        <strong>Click here</strong>
-        or drag images here
-
-        <br>
-
-        <span class="info">
-            Select multiple JPG, PNG or WEBP images.
-        </span>
-
+    <div class="panel">
+      <h2>2. Add Images</h2>
+      <div class="upload-area" id="uploadArea">
+        <strong>Click here</strong> or drag images here<br>
+        <span class="info">Select multiple JPG, PNG or WEBP images.</span>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+      <div class="image-list" id="imageList"></div>
+      <div class="buttons">
+        <button class="secondary" id="clearButton">Clear Images</button>
+        <button class="page-button" id="newPageButton">➕ New Page</button>
+      </div>
+      <div class="info">"New Page" inserts a page break. Images are otherwise split automatically according to the Images Per Page setting.</div>
     </div>
 
-    <input
-        type="file"
-        id="fileInput"
-        accept="image/*"
-        multiple
-    >
-
-    <div
-        class="image-list"
-        id="imageList"
-    ></div>
-
-    <div class="buttons">
-
-        <button
-            class="secondary"
-            id="clearButton"
-        >
-            Clear Images
-        </button>
-
-        <button
-            class="page-button"
-            id="newPageButton"
-        >
-            ➕ New Page
-        </button>
-
+    <div class="panel">
+      <h2>3. Preview</h2>
+      <div class="preview-container"><canvas id="canvas"></canvas></div>
+      <div class="info">The preview shows the first page. The PDF will contain all pages.</div>
+      <div class="buttons"><button class="primary" id="downloadButton">📄 Download PDF</button></div>
     </div>
-
-    <div class="info">
-        "New Page" inserts a page break before the next image.
-        Images are otherwise automatically divided according to
-        the Images Per Page setting.
-    </div>
-
-</div>
-
-<!-- =========================
-     PREVIEW
-========================= -->
-
-<div class="panel">
-
-    <h2>3. Preview</h2>
-
-    <div class="preview-container">
-
-        <canvas id="canvas"></canvas>
-
-    </div>
-
-    <div class="info">
-        The preview shows the current page. The PDF will contain all pages.
-    </div>
-
-    <div class="buttons">
-
-        <button
-            class="primary"
-            id="downloadButton"
-        >
-            📄 Download PDF
-        </button>
-
-    </div>
-
-</div>
-
-</div>
-
+  </div>
 </div>
 
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
-/* =========================
-   FIREBASE
-========================= */
+const auth = getAuth(initializeApp({
+  apiKey: "AIzaSyC-FbJVXLEgLGEFiyHIpG2wEZlLj7_kYNg",
+  authDomain: "collage-maker-69004.firebaseapp.com",
+  projectId: "collage-maker-69004",
+  storageBucket: "collage-maker-69004.firebasestorage.app",
+  messagingSenderId: "657246424756",
+  appId: "1:657246424756:web:eee039fe60a6af0e49d1e1",
+  measurementId: "G-HKM9MCHZFC"
+}));
 
-import {
-    initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+const $ = id => document.getElementById(id);
 
-import {
-    getAuth,
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-    signOut
-}
-from
-"https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+/* ===== LOGIN ===== */
+const errorMessage = $("errorMessage");
+function showError(m) { errorMessage.textContent = m; errorMessage.style.display = "block"; }
 
-const firebaseConfig = {
+$("loginButton").addEventListener("click", async () => {
+  const email = $("email").value.trim(), password = $("password").value;
+  errorMessage.style.display = "none";
+  if (!email || !password) return showError("Please enter your email and password.");
+  try { await signInWithEmailAndPassword(auth, email, password); }
+  catch (e) { console.error(e); showError("Incorrect email or password."); }
+});
+$("logoutButton").addEventListener("click", () => signOut(auth));
+onAuthStateChanged(auth, user => {
+  $("loginPage").style.display = user ? "none" : "flex";
+  $("appPage").style.display = user ? "block" : "none";
+});
 
-    apiKey:
-        "AIzaSyC-FbJVXLEgLGEFiyHIpG2wEZlLj7_kYNg",
+/* ===== STATE & ELEMENTS ===== */
+const ids = ["headerText","pageSize","orientation","columns","imagesPerPage","sizing","spacing","margin","headerSize","background","startingPageNumber","startingImageNumber"];
+const el = {};
+ids.forEach(i => el[i] = $(i));
+const canvas = $("canvas"), ctx = canvas.getContext("2d");
+const imageList = $("imageList");
+let images = [];      // { image, name, details }
+let pageBreaks = [];  // image indexes that start a manual new page
 
-    authDomain:
-        "collage-maker-69004.firebaseapp.com",
+const num = (v, d) => Number(v) || d;
 
-    projectId:
-        "collage-maker-69004",
-
-    storageBucket:
-        "collage-maker-69004.firebasestorage.app",
-
-    messagingSenderId:
-        "657246424756",
-
-    appId:
-        "1:657246424756:web:eee039fe60a6af0e49d1e1",
-
-    measurementId:
-        "G-HKM9MCHZFC"
-
-};
-
-const app =
-    initializeApp(
-        firebaseConfig
-    );
-
-const auth =
-    getAuth(app);
-
-/* =========================
-   LOGIN
-========================= */
-
-const loginPage =
-    document.getElementById(
-        "loginPage"
-    );
-
-const appPage =
-    document.getElementById(
-        "appPage"
-    );
-
-const loginButton =
-    document.getElementById(
-        "loginButton"
-    );
-
-const logoutButton =
-    document.getElementById(
-        "logoutButton"
-    );
-
-const errorMessage =
-    document.getElementById(
-        "errorMessage"
-    );
-
-loginButton.addEventListener(
-    "click",
-    async () => {
-
-        const email =
-            document
-                .getElementById("email")
-                .value
-                .trim();
-
-        const password =
-            document
-                .getElementById("password")
-                .value;
-
-        errorMessage.style.display =
-            "none";
-
-        if (!email || !password) {
-
-            showError(
-                "Please enter your email and password."
-            );
-
-            return;
-        }
-
-        try {
-
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-
-        }
-
-        catch (error) {
-
-            console.error(error);
-
-            showError(
-                "Incorrect email or password."
-            );
-
-        }
-
-    }
-);
-
-function showError(message) {
-
-    errorMessage.textContent =
-        message;
-
-    errorMessage.style.display =
-        "block";
-
+function getSettings() {
+  const ipp = Math.max(1, num(el.imagesPerPage.value, 4));
+  return {
+    header: el.headerText.value || "My Photo Collage",
+    pageSize: el.pageSize.value,
+    orientation: el.orientation.value,
+    imagesPerPage: ipp,
+    columns: Math.min(Math.max(1, num(el.columns.value, 2)), ipp),
+    sizing: el.sizing.value,
+    spacing: Math.max(0, Number(el.spacing.value) || 0),
+    margin: Math.max(0, Number(el.margin.value) || 0),
+    headerSize: num(el.headerSize.value, 40),
+    background: el.background.value,
+    startPage: num(el.startingPageNumber.value, 1),
+    startImage: num(el.startingImageNumber.value, 1)
+  };
 }
 
-logoutButton.addEventListener(
-    "click",
-    async () => {
-
-        await signOut(auth);
-
-    }
-);
-
-onAuthStateChanged(
-    auth,
-    user => {
-
-        if (user) {
-
-            loginPage.style.display =
-                "none";
-
-            appPage.style.display =
-                "block";
-
-        }
-
-        else {
-
-            loginPage.style.display =
-                "flex";
-
-            appPage.style.display =
-                "none";
-
-        }
-
-    }
-);
-
-/* =========================
-   ELEMENTS
-========================= */
-
-const fileInput =
-    document.getElementById(
-        "fileInput"
-    );
-
-const uploadArea =
-    document.getElementById(
-        "uploadArea"
-    );
-
-const imageList =
-    document.getElementById(
-        "imageList"
-    );
-
-const clearButton =
-    document.getElementById(
-        "clearButton"
-    );
-
-const newPageButton =
-    document.getElementById(
-        "newPageButton"
-    );
-
-const downloadButton =
-    document.getElementById(
-        "downloadButton"
-    );
-
-const headerText =
-    document.getElementById(
-        "headerText"
-    );
-
-const pageSize =
-    document.getElementById(
-        "pageSize"
-    );
-
-const orientation =
-    document.getElementById(
-        "orientation"
-    );
-
-const columns =
-    document.getElementById(
-        "columns"
-    );
-
-const imagesPerPage =
-    document.getElementById(
-        "imagesPerPage"
-    );
-
-const spacing =
-    document.getElementById(
-        "spacing"
-    );
-
-const margin =
-    document.getElementById(
-        "margin"
-    );
-
-const headerSize =
-    document.getElementById(
-        "headerSize"
-    );
-
-const background =
-    document.getElementById(
-        "background"
-    );
-
-const startingPageNumber =
-    document.getElementById(
-        "startingPageNumber"
-    );
-
-const startingImageNumber =
-    document.getElementById(
-        "startingImageNumber"
-    );
-
-const canvas =
-    document.getElementById(
-        "canvas"
-    );
-
-const ctx =
-    canvas.getContext(
-        "2d"
-    );
-
-let images = [];
-
-/*
- * A page break is stored as an image index.
- *
- * Example:
- *
- * [0, 1, 2, 3, 4, 5]
- *
- * pageBreaks = [3]
- *
- * means:
- *
- * Page 1 = images 0,1,2
- * Page 2 = images 3,4,5
- */
-
-let pageBreaks = [];
-
-/* =========================
-   UPLOAD
-========================= */
-
-uploadArea.addEventListener(
-    "click",
-    () => fileInput.click()
-);
-
-fileInput.addEventListener(
-    "change",
-    event => {
-
-        addFiles(
-            event.target.files
-        );
-
-        fileInput.value = "";
-
-    }
-);
-
-uploadArea.addEventListener(
-    "dragover",
-    event => {
-
-        event.preventDefault();
-
-        uploadArea.classList.add(
-            "dragover"
-        );
-
-    }
-);
-
-uploadArea.addEventListener(
-    "dragleave",
-    () => {
-
-        uploadArea.classList.remove(
-            "dragover"
-        );
-
-    }
-);
-
-uploadArea.addEventListener(
-    "drop",
-    event => {
-
-        event.preventDefault();
-
-        uploadArea.classList.remove(
-            "dragover"
-        );
-
-        addFiles(
-            event.dataTransfer.files
-        );
-
-    }
-);
+/* ===== UPLOAD ===== */
+const uploadArea = $("uploadArea"), fileInput = $("fileInput");
+uploadArea.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => { addFiles(e.target.files); fileInput.value = ""; });
+uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.classList.add("dragover"); });
+uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
+uploadArea.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadArea.classList.remove("dragover");
+  addFiles(e.dataTransfer.files);
+});
 
 function addFiles(files) {
-
-    [...files].forEach(
-        file => {
-
-            if (
-                !file.type.startsWith(
-                    "image/"
-                )
-            ) {
-
-                return;
-
-            }
-
-            const reader =
-                new FileReader();
-
-            reader.onload =
-                event => {
-
-                    const img =
-                        new Image();
-
-                    img.onload =
-                        () => {
-
-                            images.push({
-
-                                image:
-                                    img,
-
-                                name:
-                                    file.name,
-
-                                details:
-                                    ""
-
-                            });
-
-                            renderThumbnails();
-
-                            renderCanvas();
-
-                        };
-
-                    img.src =
-                        event.target.result;
-
-                };
-
-            reader.readAsDataURL(
-                file
-            );
-
-        }
-    );
-
+  [...files].forEach(file => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        images.push({ image: img, name: file.name, details: "" });
+        renderThumbnails();
+        renderCanvas();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
-/* =========================
-   PAGE BREAK HELPERS
-========================= */
-
+/* ===== PAGE GROUPS ===== */
 function getPageGroups() {
-
-    const groups = [];
-
-    const automaticLimit =
-        Math.max(
-            1,
-            Number(
-                imagesPerPage.value
-            ) || 4
-        );
-
-    let currentGroup = [];
-
-    for (
-        let i = 0;
-        i < images.length;
-        i++
-    ) {
-
-        /*
-         * Manual page break before
-         * this image.
-         */
-
-        if (
-            pageBreaks.includes(i) &&
-            currentGroup.length > 0
-        ) {
-
-            groups.push(
-                currentGroup
-            );
-
-            currentGroup = [];
-
-        }
-
-        /*
-         * Automatic page break.
-         */
-
-        if (
-            currentGroup.length >=
-            automaticLimit
-        ) {
-
-            groups.push(
-                currentGroup
-            );
-
-            currentGroup = [];
-
-        }
-
-        currentGroup.push(i);
-
-    }
-
-    if (
-        currentGroup.length > 0
-    ) {
-
-        groups.push(
-            currentGroup
-        );
-
-    }
-
-    return groups;
-
+  const limit = getSettings().imagesPerPage;
+  const groups = [];
+  let cur = [];
+  for (let i = 0; i < images.length; i++) {
+    if (pageBreaks.includes(i) && cur.length) { groups.push(cur); cur = []; }
+    if (cur.length >= limit) { groups.push(cur); cur = []; }
+    cur.push(i);
+  }
+  if (cur.length) groups.push(cur);
+  return groups;
 }
 
 function normalizePageBreaks() {
-
-    pageBreaks =
-        [...new Set(
-            pageBreaks
-                .filter(
-                    index =>
-                        index > 0 &&
-                        index < images.length
-                )
-        )].sort(
-            (a, b) => a - b
-        );
-
+  pageBreaks = [...new Set(pageBreaks.filter(i => i > 0 && i < images.length))].sort((a, b) => a - b);
 }
 
-/* =========================
-   NEW PAGE
-========================= */
+$("newPageButton").addEventListener("click", () => {
+  if (!images.length) return alert("Add some images first.");
+  let breakIndex = images.length;
+  const groups = getPageGroups();
+  const last = groups[groups.length - 1];
+  if (last && last.length > 1) breakIndex = last[Math.floor(last.length / 2)];
+  if (breakIndex <= 0 || breakIndex >= images.length)
+    return alert("There is no available image position for another manual page break.");
+  pageBreaks.push(breakIndex);
+  normalizePageBreaks();
+  renderThumbnails();
+  renderCanvas();
+});
 
-newPageButton.addEventListener(
-    "click",
-    () => {
-
-        if (
-            images.length === 0
-        ) {
-
-            alert(
-                "Add some images first."
-            );
-
-            return;
-
-        }
-
-        /*
-         * Find where the next automatic
-         * page would begin.
-         *
-         * If the user has 4 images per page
-         * and currently has 6 images, clicking
-         * New Page will insert a break before
-         * image 7 when possible.
-         *
-         * If that is not possible, it inserts
-         * a break before the last image.
-         */
-
-        let breakIndex =
-            images.length;
-
-        const groups =
-            getPageGroups();
-
-        if (
-            groups.length > 0
-        ) {
-
-            const lastGroup =
-                groups[
-                    groups.length - 1
-                ];
-
-            if (
-                lastGroup.length > 1
-            ) {
-
-                breakIndex =
-                    lastGroup[
-                        Math.floor(
-                            lastGroup.length / 2
-                        )
-                    ];
-
-            }
-
-        }
-
-        /*
-         * Never create a break at the
-         * very beginning or end.
-         */
-
-        if (
-            breakIndex <= 0 ||
-            breakIndex >= images.length
-        ) {
-
-            alert(
-                "There is no available image position for another manual page break."
-            );
-
-            return;
-
-        }
-
-        pageBreaks.push(
-            breakIndex
-        );
-
-        normalizePageBreaks();
-
-        renderThumbnails();
-
-        renderCanvas();
-
-    }
-);
-
-/* =========================
-   THUMBNAILS
-========================= */
+/* ===== THUMBNAILS ===== */
+function escapeHtml(t) {
+  return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 
 function renderThumbnails() {
-
-    imageList.innerHTML = "";
-
-    const firstImageNumber =
-        Number(
-            startingImageNumber.value
-        ) || 1;
-
-    /*
-     * Make sure page breaks remain
-     * valid after removing images.
-     */
-
-    normalizePageBreaks();
-
-    /*
-     * Build thumbnails.
-     */
-
-    images.forEach(
-        (item, index) => {
-
-            /*
-             * Show manual page break
-             * before this image.
-             */
-
-            if (
-                pageBreaks.includes(index)
-            ) {
-
-                const marker =
-                    document.createElement(
-                        "div"
-                    );
-
-                marker.className =
-                    "page-break-marker";
-
-                marker.innerHTML = `
-                    <span>
-                        ───── New Page ─────
-                    </span>
-                    <button
-                        type="button"
-                        data-break="${index}"
-                    >
-                        Remove Page Break
-                    </button>
-                `;
-
-                imageList.appendChild(
-                    marker
-                );
-
-                marker
-                    .querySelector("button")
-                    .addEventListener(
-                        "click",
-                        event => {
-
-                            event.stopPropagation();
-
-                            const breakIndex =
-                                Number(
-                                    event
-                                        .currentTarget
-                                        .dataset
-                                        .break
-                                );
-
-                            pageBreaks =
-                                pageBreaks.filter(
-                                    value =>
-                                        value !==
-                                        breakIndex
-                                );
-
-                            renderThumbnails();
-
-                            renderCanvas();
-
-                        }
-                    );
-
-            }
-
-            const imageNumber =
-                firstImageNumber +
-                index;
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-            div.className =
-                "image-item";
-
-            div.draggable =
-                true;
-
-            div.dataset.index =
-                index;
-
-            div.innerHTML = `
-
-                <div class="thumbnail">
-
-                    <img
-                        src="${item.image.src}"
-                        draggable="false"
-                    >
-
-                    <button
-                        class="remove-image"
-                        data-index="${index}"
-                        type="button"
-                    >
-                        ×
-                    </button>
-
-                </div>
-
-                <div class="image-number">
-                    Image ${imageNumber}
-                </div>
-
-                <textarea
-                    class="image-details"
-                    data-index="${index}"
-                    placeholder="Enter details for image ${imageNumber}..."
-                >${escapeHtml(item.details)}</textarea>
-
-            `;
-
-            imageList.appendChild(
-                div
-            );
-
-        }
-    );
-
-    /* =========================
-       REMOVE
-    ========================= */
-
-    document
-        .querySelectorAll(
-            ".remove-image"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    function(event) {
-
-                        event.stopPropagation();
-
-                        const index =
-                            Number(
-                                this.dataset.index
-                            );
-
-                        /*
-                         * Remove the image.
-                         */
-
-                        images.splice(
-                            index,
-                            1
-                        );
-
-                        /*
-                         * Shift page breaks.
-                         */
-
-                        pageBreaks =
-                            pageBreaks
-                                .map(
-                                    breakIndex => {
-
-                                        if (
-                                            breakIndex >
-                                            index
-                                        ) {
-
-                                            return breakIndex - 1;
-
-                                        }
-
-                                        return breakIndex;
-
-                                    }
-                                )
-                                .filter(
-                                    breakIndex =>
-                                        breakIndex > 0 &&
-                                        breakIndex < images.length
-                                );
-
-                        renderThumbnails();
-
-                        renderCanvas();
-
-                    }
-                );
-
-            }
-        );
-
-    /* =========================
-       DETAILS
-    ========================= */
-
-    document
-        .querySelectorAll(
-            ".image-details"
-        )
-        .forEach(
-            textarea => {
-
-                textarea.addEventListener(
-                    "input",
-                    function(event) {
-
-                        event.stopPropagation();
-
-                        const index =
-                            Number(
-                                this.dataset.index
-                            );
-
-                        if (
-                            images[index]
-                        ) {
-
-                            images[index].details =
-                                this.value;
-
-                        }
-
-                        renderCanvas();
-
-                    }
-                );
-
-                textarea.addEventListener(
-                    "mousedown",
-                    event => {
-
-                        event.stopPropagation();
-
-                    }
-                );
-
-            }
-        );
-
-    /* =========================
-       DRAG & DROP
-    ========================= */
-
-    document
-        .querySelectorAll(
-            ".image-item"
-        )
-        .forEach(
-            item => {
-
-                item.addEventListener(
-                    "dragstart",
-                    function(event) {
-
-                        this.classList.add(
-                            "dragging"
-                        );
-
-                        event.dataTransfer.effectAllowed =
-                            "move";
-
-                        event.dataTransfer.setData(
-                            "text/plain",
-                            this.dataset.index
-                        );
-
-                    }
-                );
-
-                item.addEventListener(
-                    "dragend",
-                    function() {
-
-                        this.classList.remove(
-                            "dragging"
-                        );
-
-                        document
-                            .querySelectorAll(
-                                ".image-item"
-                            )
-                            .forEach(
-                                element => {
-
-                                    element.classList.remove(
-                                        "drag-over"
-                                    );
-
-                                }
-                            );
-
-                    }
-                );
-
-                item.addEventListener(
-                    "dragover",
-                    function(event) {
-
-                        event.preventDefault();
-
-                        event.dataTransfer.dropEffect =
-                            "move";
-
-                        this.classList.add(
-                            "drag-over"
-                        );
-
-                    }
-                );
-
-                item.addEventListener(
-                    "dragleave",
-                    function() {
-
-                        this.classList.remove(
-                            "drag-over"
-                        );
-
-                    }
-                );
-
-                item.addEventListener(
-                    "drop",
-                    function(event) {
-
-                        event.preventDefault();
-
-                        this.classList.remove(
-                            "drag-over"
-                        );
-
-                        const fromIndex =
-                            Number(
-                                event.dataTransfer
-                                    .getData(
-                                        "text/plain"
-                                    )
-                            );
-
-                        const toIndex =
-                            Number(
-                                this.dataset.index
-                            );
-
-                        if (
-                            Number.isNaN(
-                                fromIndex
-                            )
-                        ) {
-
-                            return;
-
-                        }
-
-                        if (
-                            fromIndex ===
-                            toIndex
-                        ) {
-
-                            return;
-
-                        }
-
-                        /*
-                         * Move image.
-                         */
-
-                        const movedImage =
-                            images.splice(
-                                fromIndex,
-                                1
-                            )[0];
-
-                        images.splice(
-                            toIndex,
-                            0,
-                            movedImage
-                        );
-
-                        /*
-                         * Rebuild page breaks
-                         * based on their relative
-                         * positions.
-                         */
-
-                        pageBreaks =
-                            pageBreaks.map(
-                                breakIndex => {
-
-                                    if (
-                                        breakIndex ===
-                                        fromIndex
-                                    ) {
-
-                                        return toIndex;
-
-                                    }
-
-                                    if (
-                                        fromIndex <
-                                        breakIndex &&
-                                        toIndex >=
-                                        breakIndex
-                                    ) {
-
-                                        return breakIndex - 1;
-
-                                    }
-
-                                    if (
-                                        fromIndex >
-                                        breakIndex &&
-                                        toIndex <=
-                                        breakIndex
-                                    ) {
-
-                                        return breakIndex + 1;
-
-                                    }
-
-                                    return breakIndex;
-
-                                }
-                            );
-
-                        normalizePageBreaks();
-
-                        renderThumbnails();
-
-                        renderCanvas();
-
-                    }
-                );
-
-            }
-        );
-
-}
-
-/* =========================
-   ESCAPE HTML
-========================= */
-
-function escapeHtml(text) {
-
-    return String(text)
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-/* =========================
-   CLEAR
-========================= */
-
-clearButton.addEventListener(
-    "click",
-    () => {
-
-        images = [];
-
-        pageBreaks = [];
-
+  imageList.innerHTML = "";
+  normalizePageBreaks();
+  const first = num(el.startingImageNumber.value, 1);
+
+  images.forEach((item, index) => {
+    if (pageBreaks.includes(index)) {
+      const marker = document.createElement("div");
+      marker.className = "page-break-marker";
+      marker.innerHTML = `<span>───── New Page ─────</span><button type="button">Remove Page Break</button>`;
+      marker.querySelector("button").addEventListener("click", () => {
+        pageBreaks = pageBreaks.filter(v => v !== index);
         renderThumbnails();
-
         renderCanvas();
-
+      });
+      imageList.appendChild(marker);
     }
-);
 
-/* =========================
-   SETTINGS
-========================= */
+    const n = first + index;
+    const div = document.createElement("div");
+    div.className = "image-item";
+    div.draggable = true;
+    div.dataset.index = index;
+    div.innerHTML = `
+      <div class="thumbnail">
+        <img src="${item.image.src}" draggable="false">
+        <button class="remove-image" type="button">×</button>
+      </div>
+      <div class="image-number">Image ${n}</div>
+      <textarea class="image-details" placeholder="Enter details for image ${n}...">${escapeHtml(item.details)}</textarea>`;
+    imageList.appendChild(div);
 
-[
-    headerText,
-    pageSize,
-    orientation,
-    columns,
-    imagesPerPage,
-    spacing,
-    margin,
-    headerSize,
-    background,
-    startingPageNumber,
-    startingImageNumber
+    /* remove */
+    div.querySelector(".remove-image").addEventListener("click", e => {
+      e.stopPropagation();
+      images.splice(index, 1);
+      pageBreaks = pageBreaks.map(b => (b > index ? b - 1 : b)).filter(b => b > 0 && b < images.length);
+      renderThumbnails();
+      renderCanvas();
+    });
 
-].forEach(
-    element => {
+    /* details */
+    const ta = div.querySelector("textarea");
+    ta.addEventListener("input", () => { item.details = ta.value; renderCanvas(); });
+    ta.addEventListener("mousedown", e => e.stopPropagation());
 
-        element.addEventListener(
-            "input",
-            () => {
-
-                renderThumbnails();
-
-                renderCanvas();
-
-            }
-        );
-
-        element.addEventListener(
-            "change",
-            () => {
-
-                renderThumbnails();
-
-                renderCanvas();
-
-            }
-        );
-
-    }
-);
-
-/* =========================
-   SETTINGS OBJECT
-========================= */
-
-function getSettings() {
-
-    return {
-
-        header:
-            headerText.value ||
-            "My Photo Collage",
-
-        pageSize:
-            pageSize.value,
-
-        orientation:
-            orientation.value,
-
-        columns:
-            Number(
-                columns.value
-            ),
-
-        imagesPerPage:
-            Math.max(
-                1,
-                Number(
-                    imagesPerPage.value
-                ) || 4
-            ),
-
-        spacing:
-            Number(
-                spacing.value
-            ),
-
-        margin:
-            Number(
-                margin.value
-            ),
-
-        headerSize:
-            Number(
-                headerSize.value
-            ),
-
-        background:
-            background.value,
-
-        startingPageNumber:
-            Number(
-                startingPageNumber.value
-            ) || 1,
-
-        startingImageNumber:
-            Number(
-                startingImageNumber.value
-            ) || 1
-
-    };
-
+    /* drag & drop reorder */
+    div.addEventListener("dragstart", e => {
+      div.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", index);
+    });
+    div.addEventListener("dragend", () => {
+      div.classList.remove("dragging");
+      document.querySelectorAll(".image-item").forEach(x => x.classList.remove("drag-over"));
+    });
+    div.addEventListener("dragover", e => { e.preventDefault(); div.classList.add("drag-over"); });
+    div.addEventListener("dragleave", () => div.classList.remove("drag-over"));
+    div.addEventListener("drop", e => {
+      e.preventDefault();
+      div.classList.remove("drag-over");
+      const from = Number(e.dataTransfer.getData("text/plain")), to = index;
+      if (Number.isNaN(from) || from === to) return;
+      images.splice(to, 0, images.splice(from, 1)[0]);
+      pageBreaks = pageBreaks.map(b => {
+        if (b === from) return to;
+        if (from < b && to >= b) return b - 1;
+        if (from > b && to <= b) return b + 1;
+        return b;
+      });
+      normalizePageBreaks();
+      renderThumbnails();
+      renderCanvas();
+    });
+  });
 }
 
-/* =========================
-   PAGE DIMENSIONS
-========================= */
+$("clearButton").addEventListener("click", () => {
+  images = [];
+  pageBreaks = [];
+  renderThumbnails();
+  renderCanvas();
+});
 
-function getPageDimensions(
-    settings
-) {
+ids.forEach(id => el[id].addEventListener("input", () => {
+  if (id === "startingImageNumber") renderThumbnails();
+  renderCanvas();
+}));
 
-    let width;
-    let height;
-
-    if (
-        settings.pageSize ===
-        "a4"
-    ) {
-
-        width = 2480;
-        height = 3508;
-
-    }
-
-    else {
-
-        width = 2550;
-        height = 3300;
-
-    }
-
-    if (
-        settings.orientation ===
-        "landscape"
-    ) {
-
-        [
-            width,
-            height
-        ] = [
-            height,
-            width
-        ];
-
-    }
-
-    return {
-        width,
-        height
-    };
-
+/* ===== LAYOUT HELPERS ===== */
+function pageDims(s) {
+  let [w, h] = s.pageSize === "a4" ? [2480, 3508] : [2550, 3300];
+  if (s.orientation === "landscape") [w, h] = [h, w];
+  return { width: w, height: h };
 }
 
-/* =========================
-   DRAW IMAGE WITHOUT
-   STRETCHING
-========================= */
-
-function drawImageContain(
-    context,
-    image,
-    x,
-    y,
-    width,
-    height
-) {
-
-    const imageRatio =
-        image.width /
-        image.height;
-
-    const boxRatio =
-        width /
-        height;
-
-    let drawWidth;
-    let drawHeight;
-
-    if (
-        imageRatio >
-        boxRatio
-    ) {
-
-        drawWidth =
-            width;
-
-        drawHeight =
-            width /
-            imageRatio;
-
-    }
-
-    else {
-
-        drawHeight =
-            height;
-
-        drawWidth =
-            height *
-            imageRatio;
-
-    }
-
-    const drawX =
-        x +
-        (
-            width -
-            drawWidth
-        ) / 2;
-
-    const drawY =
-        y +
-        (
-            height -
-            drawHeight
-        ) / 2;
-
-    context.drawImage(
-        image,
-        drawX,
-        drawY,
-        drawWidth,
-        drawHeight
-    );
-
+// Fixed grid of cells, based on Images Per Page (not on how many images are on the page)
+function grid(W, H, m, sp, top, bottom, s) {
+  const rows = Math.ceil(s.imagesPerPage / s.columns);
+  return {
+    cw: (W - 2 * m - sp * (s.columns - 1)) / s.columns,
+    ch: (H - top - bottom - sp * (rows - 1)) / rows
+  };
 }
 
-/* =========================
-   TEXT WRAPPING
-========================= */
-
-function wrapText(
-    context,
-    text,
-    maxWidth
-) {
-
-    const words =
-        text.split(
-            /\s+/
-        );
-
-    const lines = [];
-
-    let line = "";
-
-    words.forEach(
-        word => {
-
-            const testLine =
-                line
-                    ? line +
-                      " " +
-                      word
-                    : word;
-
-            const testWidth =
-                context.measureText(
-                    testLine
-                ).width;
-
-            if (
-                testWidth >
-                maxWidth &&
-                line
-            ) {
-
-                lines.push(
-                    line
-                );
-
-                line =
-                    word;
-
-            }
-
-            else {
-
-                line =
-                    testLine;
-
-            }
-
-        }
-    );
-
-    if (line) {
-
-        lines.push(
-            line
-        );
-
-    }
-
-    return lines;
-
+// Largest common area that lets EVERY image fit (uncropped) inside a w x h frame
+function getCommonArea(w, h) {
+  let area = Infinity;
+  images.forEach(it => {
+    const r = it.image.width / it.image.height;
+    area = Math.min(area, (w * w) / r, h * h * r);
+  });
+  return area;
 }
 
-/* =========================
-   DRAW PAGE
-========================= */
-
-function drawPage(
-    pageImageIndexes,
-    pageNumber
-) {
-
-    const settings =
-        getSettings();
-
-    const page =
-        getPageDimensions(
-            settings
-        );
-
-    canvas.width =
-        page.width;
-
-    canvas.height =
-        page.height;
-
-    ctx.fillStyle =
-        settings.background;
-
-    ctx.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    /*
-     * HEADER
-     */
-
-    ctx.fillStyle =
-        "#111827";
-
-    ctx.font =
-        `bold ${settings.headerSize}px Arial`;
-
-    ctx.textAlign =
-        "center";
-
-    ctx.textBaseline =
-        "middle";
-
-    ctx.fillText(
-        settings.header,
-        canvas.width / 2,
-        settings.margin +
-        settings.headerSize
-    );
-
-    /*
-     * PAGE NUMBER
-     */
-
-    ctx.font =
-        "22px Arial";
-
-    ctx.fillStyle =
-        "#6b7280";
-
-    ctx.fillText(
-        "Page " +
-        pageNumber,
-        canvas.width / 2,
-        canvas.height -
-        settings.margin / 2
-    );
-
-    if (
-        pageImageIndexes.length === 0
-    ) {
-
-        ctx.fillStyle =
-            "#9ca3af";
-
-        ctx.font =
-            "30px Arial";
-
-        ctx.fillText(
-            "Add images to create your collage",
-            canvas.width / 2,
-            canvas.height / 2
-        );
-
-        return;
-
-    }
-
-    /*
-     * IMPORTANT:
-     *
-     * The number of cells is based on
-     * the selected Images Per Page,
-     * NOT on the number of images
-     * actually on this page.
-     *
-     * This prevents a single image
-     * from becoming full-page.
-     */
-
-    const totalCells =
-        settings.imagesPerPage;
-
-    const cols =
-        Math.max(
-            1,
-            settings.columns
-        );
-
-    const rows =
-        Math.ceil(
-            totalCells /
-            cols
-        );
-
-    const topSpace =
-        settings.margin +
-        settings.headerSize *
-        2;
-
-    const bottomSpace =
-        settings.margin *
-        2;
-
-    const availableWidth =
-        canvas.width -
-        settings.margin *
-        2;
-
-    const availableHeight =
-        canvas.height -
-        topSpace -
-        bottomSpace;
-
-    const cellWidth =
-        (
-            availableWidth -
-            settings.spacing *
-            (cols - 1)
-        ) / cols;
-
-    const cellHeight =
-        (
-            availableHeight -
-            settings.spacing *
-            (rows - 1)
-        ) / rows;
-
-    pageImageIndexes.forEach(
-        (
-            imageIndex,
-            localIndex
-        ) => {
-
-            const item =
-                images[
-                    imageIndex
-                ];
-
-            if (!item) {
-                return;
-            }
-
-            const row =
-                Math.floor(
-                    localIndex /
-                    cols
-                );
-
-            const col =
-                localIndex %
-                cols;
-
-            const x =
-                settings.margin +
-                col *
-                (
-                    cellWidth +
-                    settings.spacing
-                );
-
-            const y =
-                topSpace +
-                row *
-                (
-                    cellHeight +
-                    settings.spacing
-                );
-
-            const imageNumber =
-                settings.startingImageNumber +
-                imageIndex;
-
-            /*
-             * Reserve bottom part
-             * of cell for details.
-             */
-
-            const detailsHeight =
-                Math.min(
-                    180,
-                    cellHeight *
-                    0.28
-                );
-
-            const imageHeight =
-                Math.max(
-                    20,
-                    cellHeight -
-                    detailsHeight -
-                    15
-                );
-
-            drawImageContain(
-                ctx,
-                item.image,
-                x,
-                y,
-                cellWidth,
-                imageHeight
-            );
-
-            /*
-             * IMAGE NUMBER
-             */
-
-            ctx.textAlign =
-                "left";
-
-            ctx.textBaseline =
-                "top";
-
-            ctx.fillStyle =
-                "#111827";
-
-            ctx.font =
-                "bold 24px Arial";
-
-            ctx.fillText(
-                imageNumber +
-                ".",
-                x,
-                y +
-                imageHeight +
-                5
-            );
-
-            /*
-             * DETAILS
-             */
-
-            if (
-                item.details &&
-                item.details.trim()
-            ) {
-
-                ctx.font =
-                    "20px Arial";
-
-                const detailsX =
-                    x + 35;
-
-                const detailsWidth =
-                    cellWidth - 35;
-
-                const lines =
-                    wrapText(
-                        ctx,
-                        item.details.trim(),
-                        detailsWidth
-                    );
-
-                lines
-                    .slice(
-                        0,
-                        5
-                    )
-                    .forEach(
-                        (
-                            line,
-                            lineIndex
-                        ) => {
-
-                            ctx.fillText(
-                                line,
-                                detailsX,
-                                y +
-                                imageHeight +
-                                5 +
-                                lineIndex *
-                                25
-                            );
-
-                        }
-                    );
-
-            }
-
-        }
-    );
-
+// Size/position of one image inside its fixed frame. Never cropped or stretched.
+function getBox(x, y, w, h, img, s, area) {
+  const r = img.width / img.height;
+  let dw, dh;
+  if (s.sizing === "equal") { dw = Math.sqrt(area * r); dh = Math.sqrt(area / r); }
+  else if (r > w / h) { dw = w; dh = w / r; }
+  else { dh = h; dw = h * r; }
+  return { x: x + (w - dw) / 2, y: y + (h - dh) / 2, w: dw, h: dh };
 }
 
-/* =========================
-   CANVAS PREVIEW
-========================= */
+function wrapText(c, text, maxWidth) {
+  const lines = [];
+  let line = "";
+  text.split(/\s+/).forEach(word => {
+    const test = line ? line + " " + word : word;
+    if (c.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
+    else line = test;
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+/* ===== PREVIEW ===== */
+function drawPage(idx, pageNo) {
+  const s = getSettings(), { width: W, height: H } = pageDims(s);
+  canvas.width = W;
+  canvas.height = H;
+  ctx.fillStyle = s.background;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#111827";
+  ctx.font = `bold ${s.headerSize}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s.header, W / 2, s.margin + s.headerSize);
+
+  ctx.font = "22px Arial";
+  ctx.fillStyle = "#6b7280";
+  ctx.fillText("Page " + pageNo, W / 2, H - s.margin / 2);
+
+  if (!idx.length) {
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "30px Arial";
+    ctx.fillText("Add images to create your collage", W / 2, H / 2);
+    return;
+  }
+
+  const top = s.margin + s.headerSize * 2;
+  const g = grid(W, H, s.margin, s.spacing, top, s.margin * 2, s);
+  const detailsH = Math.min(180, g.ch * 0.28);
+  const imgH = Math.max(20, g.ch - detailsH - 15);
+  const area = getCommonArea(g.cw, imgH);
+
+  idx.forEach((i, k) => {
+    const item = images[i];
+    if (!item) return;
+    const x = s.margin + (k % s.columns) * (g.cw + s.spacing);
+    const y = top + Math.floor(k / s.columns) * (g.ch + s.spacing);
+
+    const box = getBox(x, y, g.cw, imgH, item.image, s, area);
+    ctx.drawImage(item.image, box.x, box.y, box.w, box.h);
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 24px Arial";
+    ctx.fillText((s.startImage + i) + ".", x, y + imgH + 5);
+
+    if (item.details && item.details.trim()) {
+      ctx.font = "20px Arial";
+      wrapText(ctx, item.details.trim(), g.cw - 35).slice(0, 5).forEach((line, li) =>
+        ctx.fillText(line, x + 35, y + imgH + 5 + li * 25));
+    }
+  });
+}
 
 function renderCanvas() {
-
-    const groups =
-        getPageGroups();
-
-    /*
-     * The canvas can only show one page
-     * at a time.
-     *
-     * For now it shows the first page.
-     */
-
-    if (
-        groups.length === 0
-    ) {
-
-        drawPage(
-            [],
-            getSettings()
-                .startingPageNumber
-        );
-
-        return;
-
-    }
-
-    drawPage(
-        groups[0],
-        getSettings()
-            .startingPageNumber
-    );
-
+  const groups = getPageGroups();
+  drawPage(groups[0] || [], getSettings().startPage);
 }
 
-/* =========================
-   PDF DOWNLOAD
-========================= */
-
-downloadButton.addEventListener(
-    "click",
-    () => {
-
-        if (
-            images.length === 0
-        ) {
-
-            alert(
-                "Please add at least one image."
-            );
-
-            return;
-
-        }
-
-        const settings =
-            getSettings();
-
-        /*
-         * PDF dimensions in mm.
-         */
-
-        let pdfWidth;
-        let pdfHeight;
-
-        if (
-            settings.pageSize ===
-            "a4"
-        ) {
-
-            pdfWidth = 210;
-            pdfHeight = 297;
-
-        }
-
-        else {
-
-            pdfWidth = 215.9;
-            pdfHeight = 279.4;
-
-        }
-
-        if (
-            settings.orientation ===
-            "landscape"
-        ) {
-
-            [
-                pdfWidth,
-                pdfHeight
-            ] = [
-                pdfHeight,
-                pdfWidth
-            ];
-
-        }
-
-        const pdf =
-            new jspdf.jsPDF({
-
-                orientation:
-                    settings.orientation,
-
-                unit:
-                    "mm",
-
-                format:
-                    settings.pageSize ===
-                    "a4"
-                        ? "a4"
-                        : "letter"
-
-            });
-
-        /*
-         * Get the exact same page groups
-         * used by the preview.
-         */
-
-        const groups =
-            getPageGroups();
-
-        groups.forEach(
-            (
-                pageImageIndexes,
-                groupIndex
-            ) => {
-
-                if (
-                    groupIndex > 0
-                ) {
-
-                    pdf.addPage(
-                        settings.pageSize ===
-                        "a4"
-                            ? "a4"
-                            : "letter",
-
-                        settings.orientation
-                    );
-
-                }
-
-                /*
-                 * Background
-                 */
-
-                const rgb =
-                    hexToRgb(
-                        settings.background
-                    );
-
-                pdf.setFillColor(
-                    rgb.r,
-                    rgb.g,
-                    rgb.b
-                );
-
-                pdf.rect(
-                    0,
-                    0,
-                    pdfWidth,
-                    pdfHeight,
-                    "F"
-                );
-
-                /*
-                 * Header
-                 */
-
-                const marginMM =
-                    Math.max(
-                        5,
-                        settings.margin /
-                        10
-                    );
-
-                const spacingMM =
-                    Math.max(
-                        0,
-                        settings.spacing /
-                        10
-                    );
-
-                const headerSizeMM =
-                    Math.max(
-                        5,
-                        settings.headerSize /
-                        8
-                    );
-
-                const headerY =
-                    marginMM +
-                    headerSizeMM;
-
-                pdf.setTextColor(
-                    17,
-                    24,
-                    39
-                );
-
-                pdf.setFont(
-                    "helvetica",
-                    "bold"
-                );
-
-                pdf.setFontSize(
-                    headerSizeMM
-                );
-
-                pdf.text(
-                    settings.header,
-                    pdfWidth / 2,
-                    headerY,
-                    {
-                        align: "center"
-                    }
-                );
-
-                /*
-                 * Fixed grid.
-                 *
-                 * This is the important part.
-                 * The grid is based on the selected
-                 * Images Per Page, not the number of
-                 * images currently on this page.
-                 */
-
-                const cols =
-                    Math.max(
-                        1,
-                        settings.columns
-                    );
-
-                const totalCells =
-                    settings.imagesPerPage;
-
-                const rows =
-                    Math.ceil(
-                        totalCells /
-                        cols
-                    );
-
-                const topSpace =
-                    marginMM +
-                    headerSizeMM *
-                    2;
-
-                const bottomSpace =
-                    marginMM *
-                    1.8;
-
-                const availableWidth =
-                    pdfWidth -
-                    marginMM *
-                    2;
-
-                const availableHeight =
-                    pdfHeight -
-                    topSpace -
-                    bottomSpace;
-
-                const cellWidth =
-                    (
-                        availableWidth -
-                        spacingMM *
-                        (cols - 1)
-                    ) /
-                    cols;
-
-                const cellHeight =
-                    (
-                        availableHeight -
-                        spacingMM *
-                        (rows - 1)
-                    ) /
-                    rows;
-
-                /*
-                 * Draw images.
-                 */
-
-                pageImageIndexes.forEach(
-                    (
-                        imageIndex,
-                        localIndex
-                    ) => {
-
-                        const item =
-                            images[
-                                imageIndex
-                            ];
-
-                        if (!item) {
-                            return;
-                        }
-
-                        const row =
-                            Math.floor(
-                                localIndex /
-                                cols
-                            );
-
-                        const col =
-                            localIndex %
-                            cols;
-
-                        const x =
-                            marginMM +
-                            col *
-                            (
-                                cellWidth +
-                                spacingMM
-                            );
-
-                        const y =
-                            topSpace +
-                            row *
-                            (
-                                cellHeight +
-                                spacingMM
-                            );
-
-                        const imageNumber =
-                            settings.startingImageNumber +
-                            imageIndex;
-
-                        /*
-                         * Details area.
-                         */
-
-                        const detailsHeight =
-                            Math.min(
-                                35,
-                                cellHeight *
-                                0.28
-                            );
-
-                        const imageAreaHeight =
-                            Math.max(
-                                20,
-                                cellHeight -
-                                detailsHeight -
-                                4
-                            );
-
-                        /*
-                         * Preserve image aspect ratio.
-                         */
-
-                        const ratio =
-                            item.image.width /
-                            item.image.height;
-
-                        let drawWidth =
-                            cellWidth;
-
-                        let drawHeight =
-                            drawWidth /
-                            ratio;
-
-                        if (
-                            drawHeight >
-                            imageAreaHeight
-                        ) {
-
-                            drawHeight =
-                                imageAreaHeight;
-
-                            drawWidth =
-                                drawHeight *
-                                ratio;
-
-                        }
-
-                        const imageX =
-                            x +
-                            (
-                                cellWidth -
-                                drawWidth
-                            ) /
-                            2;
-
-                        const imageY =
-                            y +
-                            (
-                                imageAreaHeight -
-                                drawHeight
-                            ) /
-                            2;
-
-                        /*
-                         * Convert image to JPEG.
-                         */
-
-                        const tempCanvas =
-                            document.createElement(
-                                "canvas"
-                            );
-
-                        tempCanvas.width =
-                            item.image.width;
-
-                        tempCanvas.height =
-                            item.image.height;
-
-                        const tempCtx =
-                            tempCanvas.getContext(
-                                "2d"
-                            );
-
-                        tempCtx.drawImage(
-                            item.image,
-                            0,
-                            0
-                        );
-
-                        const imageData =
-                            tempCanvas.toDataURL(
-                                "image/jpeg",
-                                0.92
-                            );
-
-                        pdf.addImage(
-                            imageData,
-                            "JPEG",
-                            imageX,
-                            imageY,
-                            drawWidth,
-                            drawHeight
-                        );
-
-                        /*
-                         * IMAGE NUMBER
-                         */
-
-                        pdf.setFont(
-                            "helvetica",
-                            "bold"
-                        );
-
-                        pdf.setFontSize(
-                            10
-                        );
-
-                        pdf.setTextColor(
-                            17,
-                            24,
-                            39
-                        );
-
-                        pdf.text(
-                            imageNumber +
-                            ".",
-                            x,
-                            y +
-                            imageAreaHeight +
-                            6
-                        );
-
-                        /*
-                         * DETAILS
-                         */
-
-                        if (
-                            item.details &&
-                            item.details.trim()
-                        ) {
-
-                            pdf.setFont(
-                                "helvetica",
-                                "normal"
-                            );
-
-                            pdf.setFontSize(
-                                8
-                            );
-
-                            const detailLines =
-                                pdf.splitTextToSize(
-                                    item.details.trim(),
-                                    cellWidth -
-                                    8
-                                );
-
-                            pdf.text(
-                                detailLines.slice(
-                                    0,
-                                    3
-                                ),
-                                x + 7,
-                                y +
-                                imageAreaHeight +
-                                6
-                            );
-
-                        }
-
-                    }
-                );
-
-                /*
-                 * PAGE NUMBER
-                 */
-
-                const pageNumber =
-                    settings.startingPageNumber +
-                    groupIndex;
-
-                pdf.setFont(
-                    "helvetica",
-                    "normal"
-                );
-
-                pdf.setFontSize(
-                    8
-                );
-
-                pdf.setTextColor(
-                    107,
-                    114,
-                    128
-                );
-
-                pdf.text(
-                    "Page " +
-                    pageNumber,
-                    pdfWidth / 2,
-                    pdfHeight -
-                    marginMM / 2,
-                    {
-                        align: "center"
-                    }
-                );
-
-            }
-        );
-
-        /*
-         * Filename
-         */
-
-        let filename =
-            settings.header
-                .trim()
-                .replace(
-                    /[^a-z0-9]/gi,
-                    "_"
-                )
-                .replace(
-                    /_+/g,
-                    "_"
-                );
-
-        if (!filename) {
-
-            filename =
-                "collage";
-
-        }
-
-        pdf.save(
-            filename +
-            ".pdf"
-        );
-
-    }
-);
-
-/* =========================
-   HEX TO RGB
-========================= */
-
+/* ===== PDF ===== */
 function hexToRgb(hex) {
-
-    const clean =
-        hex.replace(
-            "#",
-            ""
-        );
-
-    return {
-
-        r:
-            parseInt(
-                clean.substring(
-                    0,
-                    2
-                ),
-                16
-            ),
-
-        g:
-            parseInt(
-                clean.substring(
-                    2,
-                    4
-                ),
-                16
-            ),
-
-        b:
-            parseInt(
-                clean.substring(
-                    4,
-                    6
-                ),
-                16
-            )
-
-    };
-
+  const h = hex.replace("#", "");
+  return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
 }
 
-/* =========================
-   INITIAL
-========================= */
+$("downloadButton").addEventListener("click", () => {
+  if (!images.length) return alert("Please add at least one image.");
+  const s = getSettings();
+  const fmt = s.pageSize === "a4" ? "a4" : "letter";
+  let [pw, ph] = fmt === "a4" ? [210, 297] : [215.9, 279.4];
+  if (s.orientation === "landscape") { [pw, ph] = [ph, pw]; }
 
+  const pdf = new jspdf.jsPDF({ orientation: s.orientation, unit: "mm", format: fmt });
+
+  const mm = Math.max(5, s.margin / 10);
+  const sp = s.spacing / 10;
+  const hmm = Math.max(5, s.headerSize / 8);
+  const top = mm + hmm * 2;
+  const g = grid(pw, ph, mm, sp, top, mm * 1.8, s);
+  const detailsH = Math.min(35, g.ch * 0.28);
+  const imgH = Math.max(20, g.ch - detailsH - 4);
+  const area = getCommonArea(g.cw, imgH);
+  const [R, G, B] = hexToRgb(s.background);
+
+  getPageGroups().forEach((idx, gi) => {
+    if (gi > 0) pdf.addPage(fmt, s.orientation);
+
+    pdf.setFillColor(R, G, B);
+    pdf.rect(0, 0, pw, ph, "F");
+
+    pdf.setTextColor(17, 24, 39);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(Math.max(10, s.headerSize * 0.55));
+    pdf.text(s.header, pw / 2, mm + hmm, { align: "center" });
+
+    idx.forEach((i, k) => {
+      const item = images[i];
+      if (!item) return;
+      const x = mm + (k % s.columns) * (g.cw + sp);
+      const y = top + Math.floor(k / s.columns) * (g.ch + sp);
+      const box = getBox(x, y, g.cw, imgH, item.image, s, area);
+
+      // JPEG on a white background (stops transparent PNGs turning black), downscaled to keep the PDF small
+      const scale = Math.min(1, 1800 / Math.max(item.image.width, item.image.height));
+      const tc = document.createElement("canvas");
+      tc.width = Math.round(item.image.width * scale);
+      tc.height = Math.round(item.image.height * scale);
+      const tctx = tc.getContext("2d");
+      tctx.fillStyle = "#ffffff";
+      tctx.fillRect(0, 0, tc.width, tc.height);
+      tctx.drawImage(item.image, 0, 0, tc.width, tc.height);
+      pdf.addImage(tc.toDataURL("image/jpeg", 0.92), "JPEG", box.x, box.y, box.w, box.h);
+
+      pdf.setTextColor(17, 24, 39);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.text((s.startImage + i) + ".", x, y + imgH + 6);
+
+      if (item.details && item.details.trim()) {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.text(pdf.splitTextToSize(item.details.trim(), g.cw - 8).slice(0, 3), x + 7, y + imgH + 6);
+      }
+    });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(107, 114, 128);
+    pdf.text("Page " + (s.startPage + gi), pw / 2, ph - mm / 2, { align: "center" });
+  });
+
+  const filename = s.header.trim().replace(/[^a-z0-9]/gi, "_").replace(/_+/g, "_") || "collage";
+  pdf.save(filename + ".pdf");
+});
+
+/* ===== INIT ===== */
 renderThumbnails();
-
 renderCanvas();
-
 </script>
-
 </body>
-
 </html>
