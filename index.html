@@ -88,6 +88,8 @@ button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weigh
         <div><label>Images Per Page</label>
           <select id="imagesPerPage"><option>1</option><option>2</option><option selected>4</option><option>6</option><option>8</option><option>9</option><option>12</option><option>16</option></select></div>
         <div><label>Caption Font Size (pt)</label><input type="number" id="captionSize" value="9" min="5" max="30"></div>
+        <div><label>Image Fit</label>
+          <select id="imageFit"><option value="fit" selected>Fit to boundary (whole photo)</option><option value="fill">Fill the boundary (stretches photo)</option></select></div>
         <div><label>Image Spacing</label><input type="number" id="spacing" value="10" min="0" max="100"></div>
         <div><label>Page Margin</label><input type="number" id="margin" value="30" min="0" max="150"></div>
         <div><label>Header Size</label><input type="number" id="headerSize" value="40" min="10" max="100"></div>
@@ -159,7 +161,7 @@ onAuthStateChanged(auth, user => {
 });
 
 /* ===== STATE & ELEMENTS ===== */
-const ids = ["headerText","pageSize","orientation","columns","imagesPerPage","captionSize","spacing","margin","headerSize","background","startingPageNumber","startingImageNumber"];
+const ids = ["headerText","pageSize","orientation","columns","imagesPerPage","captionSize","imageFit","spacing","margin","headerSize","background","startingPageNumber","startingImageNumber"];
 const el = {};
 ids.forEach(i => el[i] = $(i));
 const canvas = $("canvas"), ctx = canvas.getContext("2d");
@@ -179,6 +181,7 @@ function getSettings() {
     imagesPerPage: ipp,
     columns: Math.min(Math.max(1, num(el.columns.value, 2)), ipp),
     captionSize: Math.min(30, Math.max(5, num(el.captionSize.value, 9))),
+    imageFit: el.imageFit.value,
     spacing: Math.max(0, Number(el.spacing.value) || 0),
     margin: Math.max(0, Number(el.margin.value) || 0),
     headerSize: num(el.headerSize.value, 40),
@@ -356,8 +359,11 @@ function grid(W, H, m, sp, top, bottom, s) {
   };
 }
 
-// Fit an image inside its fixed frame (w x h): as large as possible, never cropped or stretched
-function getBox(x, y, w, h, img) {
+// "fit": whole photo, as large as possible inside the frame (never cropped or stretched).
+// "fill": the whole photo is stretched to cover the entire frame, so every photo looks the same size
+// (nothing is cropped, but the photo is distorted if its shape differs from the frame).
+function getBox(x, y, w, h, img, mode) {
+  if (mode === "fill") return { x, y, w, h };
   const r = img.width / img.height;
   let dw, dh;
   if (r > w / h) { dw = w; dh = w / r; } else { dh = h; dw = h * r; }
@@ -415,7 +421,7 @@ function drawPage(idx, pageNo) {
     const x = s.margin + (k % s.columns) * (g.cw + s.spacing);
     const y = top + Math.floor(k / s.columns) * (g.ch + s.spacing);
 
-    const box = getBox(x, y, g.cw, imgH, item.image);
+    const box = getBox(x, y, g.cw, imgH, item.image, s.imageFit);
     ctx.drawImage(item.image, box.x, box.y, box.w, box.h);
 
     const label = (s.startImage + i) + ".";
@@ -494,7 +500,7 @@ $("downloadButton").addEventListener("click", () => {
       if (!item) return;
       const x = mm + (k % s.columns) * (g.cw + sp);
       const y = top + Math.floor(k / s.columns) * (g.ch + sp);
-      const box = getBox(x, y, g.cw, imgH, item.image);
+      const box = getBox(x, y, g.cw, imgH, item.image, s.imageFit);
 
       // JPEG on a white background (stops transparent PNGs turning black), downscaled to keep the PDF small
       const scale = Math.min(1, 1800 / Math.max(item.image.width, item.image.height));
