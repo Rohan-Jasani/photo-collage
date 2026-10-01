@@ -87,8 +87,7 @@ button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weigh
           <select id="columns"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></div>
         <div><label>Images Per Page</label>
           <select id="imagesPerPage"><option>1</option><option>2</option><option selected>4</option><option>6</option><option>8</option><option>9</option><option>12</option><option>16</option></select></div>
-        <div><label>Image Sizing</label>
-          <select id="sizing"><option value="equal" selected>Equal size (same area)</option><option value="fit">Largest that fits</option></select></div>
+        <div><label>Caption Font Size (pt)</label><input type="number" id="captionSize" value="9" min="5" max="30"></div>
         <div><label>Image Spacing</label><input type="number" id="spacing" value="10" min="0" max="100"></div>
         <div><label>Page Margin</label><input type="number" id="margin" value="30" min="0" max="150"></div>
         <div><label>Header Size</label><input type="number" id="headerSize" value="40" min="10" max="100"></div>
@@ -160,7 +159,7 @@ onAuthStateChanged(auth, user => {
 });
 
 /* ===== STATE & ELEMENTS ===== */
-const ids = ["headerText","pageSize","orientation","columns","imagesPerPage","sizing","spacing","margin","headerSize","background","startingPageNumber","startingImageNumber"];
+const ids = ["headerText","pageSize","orientation","columns","imagesPerPage","captionSize","spacing","margin","headerSize","background","startingPageNumber","startingImageNumber"];
 const el = {};
 ids.forEach(i => el[i] = $(i));
 const canvas = $("canvas"), ctx = canvas.getContext("2d");
@@ -179,7 +178,7 @@ function getSettings() {
     orientation: el.orientation.value,
     imagesPerPage: ipp,
     columns: Math.min(Math.max(1, num(el.columns.value, 2)), ipp),
-    sizing: el.sizing.value,
+    captionSize: Math.min(30, Math.max(5, num(el.captionSize.value, 9))),
     spacing: Math.max(0, Number(el.spacing.value) || 0),
     margin: Math.max(0, Number(el.margin.value) || 0),
     headerSize: num(el.headerSize.value, 40),
@@ -357,23 +356,11 @@ function grid(W, H, m, sp, top, bottom, s) {
   };
 }
 
-// Largest common area that lets EVERY image fit (uncropped) inside a w x h frame
-function getCommonArea(w, h) {
-  let area = Infinity;
-  images.forEach(it => {
-    const r = it.image.width / it.image.height;
-    area = Math.min(area, (w * w) / r, h * h * r);
-  });
-  return area;
-}
-
-// Size/position of one image inside its fixed frame. Never cropped or stretched.
-function getBox(x, y, w, h, img, s, area) {
+// Fit an image inside its fixed frame (w x h): as large as possible, never cropped or stretched
+function getBox(x, y, w, h, img) {
   const r = img.width / img.height;
   let dw, dh;
-  if (s.sizing === "equal") { dw = Math.sqrt(area * r); dh = Math.sqrt(area / r); }
-  else if (r > w / h) { dw = w; dh = w / r; }
-  else { dh = h; dw = h * r; }
+  if (r > w / h) { dw = w; dh = w / r; } else { dh = h; dw = h * r; }
   return { x: x + (w - dw) / 2, y: y + (h - dh) / 2, w: dw, h: dh };
 }
 
@@ -416,9 +403,11 @@ function drawPage(idx, pageNo) {
 
   const top = s.margin + s.headerSize * 2;
   const g = grid(W, H, s.margin, s.spacing, top, s.margin * 2, s);
-  const detailsH = Math.min(180, g.ch * 0.28);
-  const imgH = Math.max(20, g.ch - detailsH - 15);
-  const area = getCommonArea(g.cw, imgH);
+  const fs = s.captionSize * 300 / 72;          // pt -> px (canvas is 300 dpi)
+  const lineH = fs * 1.3, gap = 15;
+  const detailsH = Math.min(g.ch * 0.4, lineH * 4.2);
+  const imgH = Math.max(20, g.ch - detailsH - gap);
+  const maxLines = Math.max(1, Math.floor(detailsH / lineH));
 
   idx.forEach((i, k) => {
     const item = images[i];
@@ -426,19 +415,24 @@ function drawPage(idx, pageNo) {
     const x = s.margin + (k % s.columns) * (g.cw + s.spacing);
     const y = top + Math.floor(k / s.columns) * (g.ch + s.spacing);
 
-    const box = getBox(x, y, g.cw, imgH, item.image, s, area);
+    const box = getBox(x, y, g.cw, imgH, item.image);
     ctx.drawImage(item.image, box.x, box.y, box.w, box.h);
 
+    const label = (s.startImage + i) + ".";
+    const textY = y + imgH + gap;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     ctx.fillStyle = "#111827";
-    ctx.font = "bold 24px Arial";
-    ctx.fillText((s.startImage + i) + ".", x, y + imgH + 5);
+    ctx.font = `bold ${fs}px Arial`;
+    ctx.fillText(label, x, textY);
+    const indent = ctx.measureText(label).width + fs * 0.5;
 
     if (item.details && item.details.trim()) {
-      ctx.font = "20px Arial";
-      wrapText(ctx, item.details.trim(), g.cw - 35).slice(0, 5).forEach((line, li) =>
-        ctx.fillText(line, x + 35, y + imgH + 5 + li * 25));
+      ctx.font = `${fs}px Arial`;
+      const lines = wrapText(ctx, item.details.trim(), g.cw - indent);
+      const shown = lines.slice(0, maxLines);
+      if (lines.length > maxLines) shown[maxLines - 1] += "…";
+      shown.forEach((line, li) => ctx.fillText(line, x + indent, textY + li * lineH));
     }
   });
 }
@@ -477,9 +471,11 @@ $("downloadButton").addEventListener("click", () => {
   const hmm = Math.max(5, s.headerSize / 8);
   const top = mm + hmm * 2;
   const g = grid(pw, ph, mm, sp, top, mm * 1.8, s);
-  const detailsH = Math.min(35, g.ch * 0.28);
-  const imgH = Math.max(20, g.ch - detailsH - 4);
-  const area = getCommonArea(g.cw, imgH);
+  const fsMM = s.captionSize * 0.3528;           // pt -> mm
+  const lineH = fsMM * 1.3, gap = 2;
+  const detailsH = Math.min(g.ch * 0.4, lineH * 4.2);
+  const imgH = Math.max(20, g.ch - detailsH - gap);
+  const maxLines = Math.max(1, Math.floor(detailsH / lineH));
   const [R, G, B] = hexToRgb(s.background);
 
   getPageGroups().forEach((idx, gi) => {
@@ -498,7 +494,7 @@ $("downloadButton").addEventListener("click", () => {
       if (!item) return;
       const x = mm + (k % s.columns) * (g.cw + sp);
       const y = top + Math.floor(k / s.columns) * (g.ch + sp);
-      const box = getBox(x, y, g.cw, imgH, item.image, s, area);
+      const box = getBox(x, y, g.cw, imgH, item.image);
 
       // JPEG on a white background (stops transparent PNGs turning black), downscaled to keep the PDF small
       const scale = Math.min(1, 1800 / Math.max(item.image.width, item.image.height));
@@ -511,15 +507,21 @@ $("downloadButton").addEventListener("click", () => {
       tctx.drawImage(item.image, 0, 0, tc.width, tc.height);
       pdf.addImage(tc.toDataURL("image/jpeg", 0.92), "JPEG", box.x, box.y, box.w, box.h);
 
+      const label = (s.startImage + i) + ".";
+      const baseY = y + imgH + gap + fsMM;
       pdf.setTextColor(17, 24, 39);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      pdf.text((s.startImage + i) + ".", x, y + imgH + 6);
+      pdf.setFontSize(s.captionSize);
+      pdf.text(label, x, baseY);
+      const indent = pdf.getTextWidth(label) + fsMM * 0.5;
 
       if (item.details && item.details.trim()) {
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(8);
-        pdf.text(pdf.splitTextToSize(item.details.trim(), g.cw - 8).slice(0, 3), x + 7, y + imgH + 6);
+        pdf.setFontSize(s.captionSize);
+        const lines = pdf.splitTextToSize(item.details.trim(), g.cw - indent);
+        const shown = lines.slice(0, maxLines);
+        if (lines.length > maxLines) shown[maxLines - 1] += "...";
+        pdf.text(shown, x + indent, baseY, { lineHeightFactor: 1.3 });
       }
     });
 
