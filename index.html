@@ -41,6 +41,7 @@ input[type=color]{width:100%;height:42px;border:1px solid #ccd1d8;border-radius:
 .remove-image{position:absolute;top:5px;right:5px;width:27px;height:27px;padding:0;border-radius:50%;background:rgba(220,38,38,.9);color:#fff;font-size:18px;z-index:2}
 .page-break-marker{grid-column:1/-1;background:#eff6ff;border:2px dashed #2563eb;color:#1d4ed8;border-radius:10px;padding:12px;text-align:center;font-weight:bold}
 .page-break-marker button{margin-left:10px;padding:6px 10px;background:#dc2626;color:#fff;font-size:12px}
+.break-here{width:100%;margin-bottom:7px;padding:6px;background:#ede9fe;color:#6d28d9;font-size:12px}
 .buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px}
 .primary{background:#2563eb;color:#fff}
@@ -109,7 +110,7 @@ button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weigh
         <button class="secondary" id="clearButton">Clear Images</button>
         <button class="page-button" id="newPageButton">➕ New Page</button>
       </div>
-      <div class="info">"New Page" inserts a page break. Images are otherwise split automatically according to the Images Per Page setting.</div>
+      <div class="info">"New Page" makes the next image you add start a new page. To split pages between images you've already added, use "New page before this" on that image. Otherwise pages split automatically by the Images Per Page setting.</div>
     </div>
 
     <div class="panel">
@@ -162,6 +163,7 @@ const canvas = $("canvas"), ctx = canvas.getContext("2d");
 const imageList = $("imageList");
 let images = [];      // { image, name, details }
 let pageBreaks = [];  // image indexes that start a manual new page
+let pendingBreak = false; // true = the next image added starts a new page
 
 const num = (v, d) => Number(v) || d;
 
@@ -202,6 +204,7 @@ function addFiles(files) {
     reader.onload = ev => {
       const img = new Image();
       img.onload = () => {
+        if (pendingBreak && images.length > 0) { pageBreaks.push(images.length); pendingBreak = false; }
         images.push({ image: img, name: file.name, details: "" });
         renderThumbnails();
         renderCanvas();
@@ -232,16 +235,8 @@ function normalizePageBreaks() {
 
 $("newPageButton").addEventListener("click", () => {
   if (!images.length) return alert("Add some images first.");
-  let breakIndex = images.length;
-  const groups = getPageGroups();
-  const last = groups[groups.length - 1];
-  if (last && last.length > 1) breakIndex = last[Math.floor(last.length / 2)];
-  if (breakIndex <= 0 || breakIndex >= images.length)
-    return alert("There is no available image position for another manual page break.");
-  pageBreaks.push(breakIndex);
-  normalizePageBreaks();
+  pendingBreak = true;
   renderThumbnails();
-  renderCanvas();
 });
 
 /* ===== THUMBNAILS ===== */
@@ -278,6 +273,7 @@ function renderThumbnails() {
         <button class="remove-image" type="button">×</button>
       </div>
       <div class="image-number">Image ${n}</div>
+      ${index > 0 && !pageBreaks.includes(index) ? '<button type="button" class="break-here">⤶ New page before this</button>' : ""}
       <textarea class="image-details" placeholder="Enter details for image ${n}...">${escapeHtml(item.details)}</textarea>`;
     imageList.appendChild(div);
 
@@ -286,6 +282,15 @@ function renderThumbnails() {
       e.stopPropagation();
       images.splice(index, 1);
       pageBreaks = pageBreaks.map(b => (b > index ? b - 1 : b)).filter(b => b > 0 && b < images.length);
+      renderThumbnails();
+      renderCanvas();
+    });
+
+    /* page break before this image */
+    const bb = div.querySelector(".break-here");
+    if (bb) bb.addEventListener("click", e => {
+      e.stopPropagation();
+      pageBreaks.push(index);
       renderThumbnails();
       renderCanvas();
     });
@@ -324,11 +329,23 @@ function renderThumbnails() {
       renderCanvas();
     });
   });
+
+  if (pendingBreak) {
+    const marker = document.createElement("div");
+    marker.className = "page-break-marker";
+    marker.innerHTML = `<span>───── New Page: the next image you add starts here ─────</span><button type="button">Cancel</button>`;
+    marker.querySelector("button").addEventListener("click", () => {
+      pendingBreak = false;
+      renderThumbnails();
+    });
+    imageList.appendChild(marker);
+  }
 }
 
 $("clearButton").addEventListener("click", () => {
   images = [];
   pageBreaks = [];
+  pendingBreak = false;
   renderThumbnails();
   renderCanvas();
 });
