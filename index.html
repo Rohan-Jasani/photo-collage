@@ -47,8 +47,6 @@ button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weigh
 .primary{background:#2563eb;color:#fff}
 .primary:hover{background:#1d4ed8}
 .secondary{background:#e5e7eb;color:#111827}
-.page-button{background:#7c3aed;color:#fff}
-.page-button:hover{background:#6d28d9}
 .preview-container{overflow:auto;background:#d1d5db;padding:25px;border-radius:10px;text-align:center}
 #canvas{display:block;margin:auto;max-width:100%;height:auto;box-shadow:0 5px 25px rgba(0,0,0,.25);background:#fff}
 .info{color:#6b7280;font-size:13px;margin-top:10px}
@@ -108,9 +106,8 @@ button{border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weigh
       <div class="image-list" id="imageList"></div>
       <div class="buttons">
         <button class="secondary" id="clearButton">Clear Images</button>
-        <button class="page-button" id="newPageButton">➕ New Page</button>
       </div>
-      <div class="info">"New Page" makes the next image you add start a new page. To split pages between images you've already added, use "New page before this" on that image. Otherwise pages split automatically by the Images Per Page setting.</div>
+      <div class="info">Use "New page before this" on any image to start a new page there. Otherwise pages split automatically by the Images Per Page setting.</div>
     </div>
 
     <div class="panel">
@@ -163,7 +160,6 @@ const canvas = $("canvas"), ctx = canvas.getContext("2d");
 const imageList = $("imageList");
 let images = [];      // { image, name, details }
 let pageBreaks = [];  // image indexes that start a manual new page
-let pendingBreak = false; // true = the next image added starts a new page
 
 const num = (v, d) => Number(v) || d;
 
@@ -204,7 +200,6 @@ function addFiles(files) {
     reader.onload = ev => {
       const img = new Image();
       img.onload = () => {
-        if (pendingBreak && images.length > 0) { pageBreaks.push(images.length); pendingBreak = false; }
         images.push({ image: img, name: file.name, details: "" });
         renderThumbnails();
         renderCanvas();
@@ -232,12 +227,6 @@ function getPageGroups() {
 function normalizePageBreaks() {
   pageBreaks = [...new Set(pageBreaks.filter(i => i > 0 && i < images.length))].sort((a, b) => a - b);
 }
-
-$("newPageButton").addEventListener("click", () => {
-  if (!images.length) return alert("Add some images first.");
-  pendingBreak = true;
-  renderThumbnails();
-});
 
 /* ===== THUMBNAILS ===== */
 function escapeHtml(t) {
@@ -330,22 +319,11 @@ function renderThumbnails() {
     });
   });
 
-  if (pendingBreak) {
-    const marker = document.createElement("div");
-    marker.className = "page-break-marker";
-    marker.innerHTML = `<span>───── New Page: the next image you add starts here ─────</span><button type="button">Cancel</button>`;
-    marker.querySelector("button").addEventListener("click", () => {
-      pendingBreak = false;
-      renderThumbnails();
-    });
-    imageList.appendChild(marker);
-  }
 }
 
 $("clearButton").addEventListener("click", () => {
   images = [];
   pageBreaks = [];
-  pendingBreak = false;
   renderThumbnails();
   renderCanvas();
 });
