@@ -828,67 +828,133 @@ function renderThumbnails() {
 
     imageList.innerHTML = "";
 
+    images.forEach((item, index) => {
 
-    images.forEach(
-        (item, index) => {
+        const div = document.createElement("div");
 
-            const div =
-                document.createElement(
-                    "div"
-                );
+        div.className = "thumbnail";
 
+        div.draggable = true;
 
-            div.className =
-                "thumbnail";
+        div.dataset.index = index;
 
+        div.innerHTML = `
+            <img src="${item.image.src}">
+            <button
+                class="remove-image"
+                data-index="${index}">
+                ×
+            </button>
+        `;
 
-            div.innerHTML = `
-                <img src="${item.image.src}">
-                <button
-                    class="remove-image"
-                    data-index="${index}">
-                    ×
-                </button>
-            `;
-
-
-            imageList.appendChild(div);
-
-        }
-    );
+        imageList.appendChild(div);
+    });
 
 
+    // Remove image buttons
     document
         .querySelectorAll(".remove-image")
         .forEach(button => {
 
             button.addEventListener(
                 "click",
-                function() {
+                function(event) {
+
+                    event.stopPropagation();
 
                     const index =
-                        Number(
-                            this.dataset.index
-                        );
+                        Number(this.dataset.index);
 
-
-                    images.splice(
-                        index,
-                        1
-                    );
-
+                    images.splice(index, 1);
 
                     renderThumbnails();
-
                     renderCanvas();
-
                 }
             );
 
         });
 
-}
 
+    // Drag and drop reordering
+    document
+        .querySelectorAll(".thumbnail")
+        .forEach(thumbnail => {
+
+            thumbnail.addEventListener(
+                "dragstart",
+                function(event) {
+
+                    event.dataTransfer.setData(
+                        "text/plain",
+                        this.dataset.index
+                    );
+
+                    this.style.opacity = "0.5";
+                }
+            );
+
+
+            thumbnail.addEventListener(
+                "dragend",
+                function() {
+
+                    this.style.opacity = "1";
+                }
+            );
+
+
+            thumbnail.addEventListener(
+                "dragover",
+                function(event) {
+
+                    event.preventDefault();
+                }
+            );
+
+
+            thumbnail.addEventListener(
+                "drop",
+                function(event) {
+
+                    event.preventDefault();
+
+                    const fromIndex =
+                        Number(
+                            event.dataTransfer
+                                .getData("text/plain")
+                        );
+
+                    const toIndex =
+                        Number(this.dataset.index);
+
+
+                    if (fromIndex === toIndex) {
+                        return;
+                    }
+
+
+                    // Move the image
+                    const movedImage =
+                        images.splice(
+                            fromIndex,
+                            1
+                        )[0];
+
+
+                    images.splice(
+                        toIndex,
+                        0,
+                        movedImage
+                    );
+
+
+                    renderThumbnails();
+                    renderCanvas();
+                }
+            );
+
+        });
+}
 
 /* CLEAR */
 
